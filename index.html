@@ -3,52 +3,47 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>GestAR — Aprendé LSA</title>
+  <title>GestAR — Aprendé LSA (Todo en 1)</title>
 
-  <!-- Tailwind + Inter font -->
+  <!-- Tailwind + Inter -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- React -->
+  <!-- React + Babel (para JSX in-browser) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- TensorFlow + Handpose -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.8.0/dist/tf-core.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.8.0/dist/tf-backend-webgl.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose@0.0.7/dist/handpose.min.js"></script>
+  <!-- MediaPipe Hands + Camera Utils (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
   <style>
-    :root { --glass: rgba(255,255,255,0.9); --muted: #64748b; }
-    html,body,#root { height: 100%; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
-    .app-bg { background: linear-gradient(135deg,#6ee7b7 0%,#60a5fa 50%,#9f7aea 100%); min-height:100vh; }
-    .card { background: var(--glass); border-radius: 14px; box-shadow: 0 12px 30px rgba(0,0,0,0.12); }
-    .accent { background: linear-gradient(90deg,#7c3aed,#06b6d4); -webkit-background-clip: text; background-clip:text; color: transparent; }
+    :root { --glass: rgba(255,255,255,0.92); --muted:#6b7280; --card-radius:14px; }
+    html,body,#root { height:100%; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+    body { background: linear-gradient(135deg,#60a5fa 0%, #7c3aed 60%); margin:0; padding:24px; -webkit-font-smoothing:antialiased; }
+    .card { background: var(--glass); border-radius: var(--card-radius); box-shadow:0 12px 30px rgba(0,0,0,0.12); }
+    .accent-text { background: linear-gradient(90deg,#7c3aed,#06b6d4); -webkit-background-clip:text; color:transparent; }
     canvas.overlay { position:absolute; left:0; top:0; pointer-events:none; }
-    /* small responsive tweaks */
-    @media (max-width: 768px) { .lg\\:grid-cols-4 { grid-template-columns: 1fr; } }
+    .muted { color:var(--muted); }
+    @media (max-width: 900px){ .lg\\:grid-cols-4{ grid-template-columns: 1fr !important; } }
   </style>
 </head>
-<body class="app-bg flex items-center justify-center p-6">
-  <div id="root" class="w-full max-w-7xl"></div>
+<body>
+  <div id="root" class="max-w-7xl mx-auto"></div>
 
   <script type="text/babel">
   const { useState, useEffect, useRef } = React;
 
-  /******************************************************************
-   * CONFIG
-   ******************************************************************/
-  const REQUIRED_ACCURACY = 0.80;     // 80% frames correct
-  const CONFIDENCE_THRESHOLD = 0.55;
+  /******************** CONFIG ********************/
+  const REQUIRED_ACCURACY = 0.80;
+  const CONFIDENCE_THRESHOLD = 0.55; // for model / sim thresholds mapping
   const TEST_DURATION_SECONDS = 8;
-  const CAPTURE_INTERVAL_MS = 150;
+  const CAPTURE_INTERVAL_MS = 140;
   const SMOOTHING_WINDOW = 7;
   const REFERENCE_SAMPLES = 6;
 
-  /******************************************************************
-   * VOCABULARIO (completo) - ya organizado por categoría y dificultad
-   ******************************************************************/
+  /******************** VOCAB + INSTRUCTIONS ********************/
   const VOCAB = {
     "Letras": ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","Ñ","O","P","Q","R","S","T","U","V","W","X","Y","Z"],
     "Familia": ["madre","padre","hermano","hermana","hijo","hija","esposo","esposa","bebé","abuelo","abuela","tío","tía","primo","prima"],
@@ -59,58 +54,123 @@
     "Frases Diarias": ["hola","gracias","por favor","lo siento","adiós","buen día","buenas noches","¿cómo estás?","todo bien","hasta luego"]
   };
 
-  /******************************************************************
-   * UTIL: almacenamiento y hash de contraseña (PBKDF2, WebCrypto)
-   ******************************************************************/
-  async function genSalt() {
-    const buf = crypto.getRandomValues(new Uint8Array(16)); return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join('');
+  // instrucciones cortas (ejemplos — ajusta si querés)
+  const INSTRUCTIONS = {
+    "A":"Puño cerrado; el pulgar pegado al costado del puño.",
+    "B":"Mano abierta, palma hacia afuera, dedos juntos.",
+    "C":"Mano formando una C, con palma hacia un lado.",
+    "D":"Dedo índice levantado, resto de los dedos tocando la palma.",
+    "E":"Dedos curvados tocando la palma (similar a una E).",
+    "F":"Pulgar y índice formando círculo; otros dedos extendidos (OK style).",
+    "G":"Mano en forma de pinza, apuntando hacia un lado.",
+    "H":"Dos dedos indicadores extendidos juntos, apuntando a la derecha.",
+    "I":"Dedo meñique levantado, resto cerrado.",
+    "J":"Dibujar una J en el aire con el dedo meñique.",
+    "K":"Dedo medio e índice extendidos formando V vertical; pulgar entre ellos.",
+    "L":"Índice y pulgar formando una L.",
+    "M":"Tres dedos encima del pulgar (Mliqueo del alfabeto manual).",
+    "N":"Dos dedos encima del pulgar (N del alfabeto manual).",
+    "Ñ":"Como N pero con movimiento de tilde hacia la derecha.",
+    "O":"Mano formando una O (dedos unidos).",
+    "P":"Parecido a K pero apuntando hacia abajo.",
+    "Q":"Parecido a G pero apuntando hacia abajo.",
+    "R":"Dedo índice y medio cruzados.",
+    "S":"Puño con pulgar encima (como S en abecedario manual).",
+    "T":"Pulgar entre índice y medio (como T en abecedario manual).",
+    "U":"Índice y medio juntos, apuntando hacia arriba.",
+    "V":"Índice y medio separados formando V.",
+    "W":"Tres dedos (índice, medio, anular) levantados formando W.",
+    "X":"Índice doblado formando garra.",
+    "Y":"Pulgar y meñique extendidos (señal de Y).",
+    "Z":"Dibujar una Z en el aire con el dedo índice.",
+
+    "madre":"Mano abierta, con el pulgar tocando la barbilla (gentilmente).",
+    "padre":"Mano abierta, pulgar tocando la frente.",
+    "hermano":"Dedo índice junto, movimiento lateral entre dos personas (simplificado).",
+    "hijo":"Mano en forma de C desde arriba hacia adelante (simboliza niño).",
+    "esposo":"Mano que simula anillo en dedo anular (contextual).",
+    "esposa":"Igual que esposo, contexto femenino (dependiendo variante regional).",
+    "bebé":"Manos pequeñas frente al pecho, movimiento abrazo.",
+    "abuelo":"Mano abierta desde la frente hacia adelante (distancia mayor).",
+
+    "pan":"Golpecitos con la mano en forma de palmeta sobre la otra mano.",
+    "milanesa":"Seña descriptiva de comida frita (contextual) — usar referencia local.",
+    "pizza":"Mano que simula cortar porciones o forma triangular.",
+    "empanada":"Formar con las manos como si doblas una empanada.",
+    "manzana":"Simular pelar o sostener una manzana frente a la boca.",
+    "agua":"Imitar llevar vaso a la boca o movimiento de beber.",
+
+    "doctor":"Mano tocando el pecho con gesto de cuidado.",
+    "cocinero":"Manos simulando cocinar o mezclar en olla.",
+    "abogado":"Mano con gesto de hablar serio; depende de la convención local.",
+
+    "perro":"Palma hacia abajo, frotar la pierna como llamar a perro.",
+    "gato":"Gesto de bigotes con dedos cerca de mejillas.",
+    "pájaro":"Mano que simula pico abriéndose y cerrándose.",
+
+    "feliz":"Ambas manos cerca del pecho moviéndose hacia afuera suavemente.",
+    "triste":"Dedos hacia abajo cerca del rostro o gesto facial triste.",
+    "enojo":"Puños cerrados, expresión facial tensa.",
+    "sorpresa":"Manos cerca de la boca y ojos abiertos.",
+
+    "hola":"Mano abierta levantada a la altura de la frente, saludo.",
+    "gracias":"Mano desde la boca hacia adelante (como agradecer).",
+    "por favor":"Mano en el pecho, movimiento circular suave.",
+    "lo siento":"Mano en el pecho, gesto de disculpa.",
+    "adiós":"Mano agitando hacia afuera."
+  };
+
+  /******************** UTIL: Hash / storage ********************/
+  async function genSalt(){
+    const buf = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join('');
   }
-  async function hashPassword(password, saltHex) {
-    const enc = new TextEncoder(); const pw = enc.encode(password);
+  async function hashPassword(password, saltHex){
+    const enc = new TextEncoder();
+    const pw = enc.encode(password);
     const salt = new Uint8Array(saltHex.match(/.{1,2}/g).map(h=>parseInt(h,16)));
     const key = await crypto.subtle.importKey('raw', pw, {name:'PBKDF2'}, false, ['deriveBits']);
-    const derived = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations: 250000, hash:'SHA-256'}, key, 256);
-    const hash = new Uint8Array(derived); return Array.from(hash).map(b=>b.toString(16).padStart(2,'0')).join('');
+    const derived = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations: 200000, hash:'SHA-256'}, key, 256);
+    const hash = new Uint8Array(derived);
+    return Array.from(hash).map(b=>b.toString(16).padStart(2,'0')).join('');
   }
 
-  const STORAGE_KEY = 'gestar_users_v2';
-  function loadAllUsers() { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; } catch(e){ return {}; } }
-  function saveAllUsers(obj) { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
-
-  async function createUser(username, password) {
+  const STORAGE_KEY = 'gestar_full_v1';
+  function loadAllUsers(){ try{ const raw = localStorage.getItem(STORAGE_KEY); return raw?JSON.parse(raw):{} }catch(e){return{}} }
+  function saveAllUsers(obj){ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+  async function createUser(username,password){
     const all = loadAllUsers();
-    if (!username || username.trim().length < 3) throw new Error('Usuario mínimo 3 caracteres');
-    if (all[username]) throw new Error('Usuario ya existe');
-    if (!password || password.length < 6) throw new Error('Contraseña mínima 6 caracteres');
-    const salt = await genSalt(); const hash = await hashPassword(password, salt);
-    const profile = { username, salt, hash, data: { xp:0, streak:0, badges:[], refs:{}, lastLogin:null } };
+    if(!username || username.trim().length < 3) throw new Error('Usuario mínimo 3 caracteres');
+    if(all[username]) throw new Error('Usuario ya existe');
+    if(!password || password.length < 6) throw new Error('Contraseña mínima 6 caracteres');
+    const salt = await genSalt(); const hash = await hashPassword(password,salt);
+    const profile = { username, salt, hash, data:{ xp:0, streak:0, badges:[], refs:{}, lastLogin:null } };
     all[username] = profile; saveAllUsers(all); return profile;
   }
-  async function verifyLogin(username, password) {
+  async function verifyLogin(username,password){
     const all = loadAllUsers(); const profile = all[username];
-    if (!profile) throw new Error('Usuario no encontrado');
+    if(!profile) throw new Error('Usuario no encontrado');
     const candidate = await hashPassword(password, profile.salt);
-    if (candidate !== profile.hash) throw new Error('Contraseña incorrecta');
+    if(candidate !== profile.hash) throw new Error('Contraseña incorrecta');
     profile.data.lastLogin = new Date().toISOString(); saveAllUsers(all); return profile;
   }
-  function saveUserData(username, data) { const all = loadAllUsers(); if (!all[username]) return false; all[username].data = data; saveAllUsers(all); return true; }
-  function deleteUser(username) { const all = loadAllUsers(); delete all[username]; saveAllUsers(all); }
+  function saveUserData(username, data){ const all = loadAllUsers(); if(!all[username]) return false; all[username].data = data; saveAllUsers(all); return true; }
+  function deleteUser(username){ const all = loadAllUsers(); delete all[username]; saveAllUsers(all); }
 
-  /******************************************************************
-   * Embeddings & similarity helpers (handpose landmarks -> vector)
-   ******************************************************************/
-  function kpToVector(kp) {
-    if (!kp || kp.length === 0) return null;
-    const flat = []; kp.forEach(p => { flat.push(p[0]); flat.push(p[1]); flat.push(p[2] || 0); });
+  /******************** Embedding helpers ********************/
+  function landmarksToVector(landmarks){
+    // landmarks: [{x,y,z},...], convert to flat normalized vector
+    if(!landmarks || landmarks.length===0) return null;
+    const flat = [];
+    landmarks.forEach(p => { flat.push(p.x||p[0]); flat.push(p.y||p[1]); flat.push(p.z||p[2]||0); });
     const mean = flat.reduce((s,v)=>s+v,0)/flat.length;
-    const centered = flat.map(v=>v-mean); const norm = Math.sqrt(centered.reduce((s,v)=>s+v*v,0)) || 1;
+    const centered = flat.map(v=>v-mean);
+    const norm = Math.sqrt(centered.reduce((s,v)=>s+v*v,0)) || 1;
     return centered.map(v=>v/norm);
   }
-  function cosineSim(a,b) { if(!a||!b||a.length!==b.length) return 0; let dot=0; for(let i=0;i<a.length;i++) dot+=a[i]*b[i]; return dot; }
+  function cosineSim(a,b){ if(!a||!b||a.length!==b.length) return 0; let dot=0; for(let i=0;i<a.length;i++) dot+=a[i]*b[i]; return dot; }
 
-  /******************************************************************
-   * APP
-   ******************************************************************/
+  /******************** APP UI ********************/
   function App(){
     const [stage, setStage] = useState('landing'); // landing | auth | dashboard | lessons | practice
     const [user, setUser] = useState(null);
@@ -119,33 +179,27 @@
 
     useEffect(()=>{ setUsersList(Object.keys(loadAllUsers())); }, []);
 
-    async function onCreate(username,password){
-      try { const prof = await createUser(username,password); setUser(prof); setStage('dashboard'); setUsersList(Object.keys(loadAllUsers())); }
-      catch(e){ setMsg(e.message); setTimeout(()=>setMsg(''),3500); }
-    }
-    async function onLogin(username,password){
-      try { const prof = await verifyLogin(username,password); setUser(prof); setStage('dashboard'); setUsersList(Object.keys(loadAllUsers())); }
-      catch(e){ setMsg(e.message); setTimeout(()=>setMsg(''),3500); }
-    }
+    async function onCreate(username,password){ try { const p = await createUser(username,password); setUser(p); setStage('dashboard'); setUsersList(Object.keys(loadAllUsers())); } catch(e){ setMsg(e.message); setTimeout(()=>setMsg(''),3000); } }
+    async function onLogin(username,password){ try { const p = await verifyLogin(username,password); setUser(p); setStage('dashboard'); setUsersList(Object.keys(loadAllUsers())); } catch(e){ setMsg(e.message); setTimeout(()=>setMsg(''),3000); } }
     function onLogout(){ setUser(null); setStage('landing'); }
     function onDelete(u){ if(!confirm('Borrar usuario '+u+'?')) return; deleteUser(u); setUsersList(Object.keys(loadAllUsers())); if(user && user.username===u) onLogout(); }
 
     return (
-      <div className="mx-auto w-full">
-        {/* HEADER */}
+      <div className="max-w-7xl mx-auto">
+        {/* header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-600 to-pink-500 flex items-center justify-center text-white text-lg font-bold">G</div>
             <div>
               <div className="text-2xl font-bold text-white">GestAR</div>
-              <div className="text-sm text-white/80">Aprendé Lengua de Señas Argentina</div>
+              <div className="text-sm text-white/90">Aprendé Lengua de Señas Argentina</div>
             </div>
           </div>
           <div>
             { user ? (
               <div className="flex items-center gap-3 bg-white/90 p-2 rounded">
                 <div className="text-sm">Hola, <strong>{user.username}</strong></div>
-                <button className="px-3 py-1 rounded bg-red-500 text-white" onClick={() => { onLogout(); }}>Cerrar sesión</button>
+                <button className="px-3 py-1 rounded bg-red-500 text-white" onClick={onLogout}>Cerrar sesión</button>
               </div>
             ) : (
               <div className="text-white/90">Conectate para guardar tu progreso</div>
@@ -153,14 +207,13 @@
           </div>
         </div>
 
-        {/* LAYOUT */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* LEFT: sidebar / auth */}
+          {/* left column */}
           <div className="lg:col-span-1 card p-5">
             { stage === 'landing' && (
               <div>
-                <h2 className="text-xl font-semibold mb-2">Bienvenido a GestAR</h2>
-                <p className="text-sm text-muted">Aprendé LSA usando la cámara. Crea una cuenta o entrá como invitado.</p>
+                <h2 className="text-xl font-semibold mb-2">Bienvenida</h2>
+                <p className="text-sm muted">Entrá, creá una cuenta o probá como invitado.</p>
                 <div className="mt-4 flex flex-col gap-2">
                   <button className="px-3 py-2 rounded bg-indigo-600 text-white" onClick={()=>setStage('auth')}>Entrar / Crear cuenta</button>
                   <button className="px-3 py-2 rounded border" onClick={()=>{ setUser({ username:'Invitado', data:{ xp:0, streak:0, badges:[], refs:{} } }); setStage('dashboard'); }}>Entrar como invitado</button>
@@ -173,68 +226,35 @@
             { stage !== 'auth' && stage !== 'landing' && user && (
               <div>
                 <div className="mb-4">
-                  <div className="text-sm text-gray-600">XP</div>
+                  <div className="text-sm muted">XP</div>
                   <div className="text-2xl font-bold">{user.data.xp}</div>
                 </div>
                 <div className="mb-4">
-                  <div className="text-sm text-gray-600">Streak</div>
+                  <div className="text-sm muted">Streak</div>
                   <div className="text-2xl font-bold">🔥 {user.data.streak}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Badges</div>
+                  <div className="text-sm muted">Badges</div>
                   <div className="flex gap-2 mt-2 flex-wrap">
-                    {(user.data.badges || []).length ? (user.data.badges.map((b,i)=><div key={i} className="px-2 py-1 bg-yellow-100 rounded text-sm">{b}</div>)) : <div className="text-sm text-gray-500">—</div>}
+                    {(user.data.badges || []).length ? user.data.badges.map((b,i)=><div key={i} className="px-2 py-1 bg-yellow-100 rounded text-sm">{b}</div>) : <div className="text-sm text-gray-500">—</div>}
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* RIGHT: main content */}
+          {/* main content */}
           <div className="lg:col-span-3 card p-6">
             { stage === 'dashboard' && user && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold">Panel</h2>
-                  <div className="flex gap-2">
-                    <button className="px-3 py-2 border rounded" onClick={()=>{ setStage('lessons'); }}>Lecciones</button>
-                    <button className="px-3 py-2 border rounded" onClick={()=>{ setStage('practice'); }}>Práctica</button>
-                  </div>
-                </div>
-
-                <p className="text-sm text-muted mb-4">Seleccioná una categoría — las secciones son plegables por dificultad y contienen los items.</p>
-
-                <div className="space-y-3">
-                  {Object.keys(VOCAB).map((cat, idx) => (
-                    <AccordionBlock
-                      key={cat}
-                      title={cat}
-                      count={VOCAB[cat].length}
-                      onOpen={() => { localStorage.setItem('gestar_selected_cat', cat); setStage('lessons'); }}
-                    >
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {VOCAB[cat].map((w,i) => (
-                          <div key={w} className="p-2 bg-white/80 rounded flex justify-between items-center">
-                            <div className="text-sm font-medium">{w}</div>
-                            <div className="flex gap-1">
-                              <button className="px-2 py-1 text-xs border rounded" onClick={()=>{ localStorage.setItem('gestar_selected_cat', cat); localStorage.setItem('gestar_selected_word', w); setStage('lessons'); }}>Estudiar</button>
-                              <button className="px-2 py-1 text-xs bg-indigo-600 text-white rounded" onClick={()=>{ localStorage.setItem('gestar_selected_cat', cat); localStorage.setItem('gestar_selected_word', w); setStage('practice'); }}>Practicar</button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </AccordionBlock>
-                  ))}
-                </div>
-              </div>
+              <Dashboard user={user} onOpenLessons={()=>{ setStage('lessons'); }} onOpenPractice={()=>{ setStage('practice'); }} />
             )}
 
             { stage === 'lessons' && user && (
-              <LessonsArea user={user} onSave={(d)=>{ setUser(prev=>({...prev, data:d})); saveUserData(user.username, d); }} onBack={()=>setStage('dashboard')} />
+              <Lessons user={user} onSave={(d)=>{ setUser(prev=>({...prev, data:d})); saveUserData(user.username,d); }} onBack={()=>setStage('dashboard')} />
             )}
 
             { stage === 'practice' && user && (
-              <PracticeArea user={user} onSave={(d)=>{ setUser(prev=>({...prev, data:d})); saveUserData(user.username, d); }} onBack={()=>setStage('dashboard')} />
+              <Practice user={user} onSave={(d)=>{ setUser(prev=>({...prev, data:d})); saveUserData(user.username,d); }} onBack={()=>setStage('dashboard')} />
             )}
           </div>
         </div>
@@ -242,277 +262,429 @@
     );
   }
 
-  /******************************************************************
-   * AccordionBlock: plegable moderno
-   ******************************************************************/
-  function AccordionBlock({ title, count, children, onOpen }) {
-    const [open, setOpen] = useState(false);
+  /******************** Dashboard ********************/
+  function Dashboard({ user, onOpenLessons, onOpenPractice }){
     return (
-      <div className="card p-3">
-        <div className="flex items-center justify-between cursor-pointer" onClick={() => { setOpen(!open); if(!open && onOpen) onOpen(); }}>
-          <div>
-            <div className="text-lg font-semibold">{title}</div>
-            <div className="text-sm text-muted">{count} items</div>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">Panel</h2>
+          <div className="flex gap-2">
+            <button className="px-3 py-2 border rounded" onClick={onOpenLessons}>Lecciones</button>
+            <button className="px-3 py-2 border rounded" onClick={onOpenPractice}>Práctica</button>
           </div>
-          <div className="text-indigo-600 font-medium">{open ? '—' : '+'}</div>
         </div>
-        {open && <div className="mt-3">{children}</div>}
+
+        <p className="text-sm muted mb-4">Seleccioná una categoría. Hacé clic en el + para desplegar y ver los items. Podés capturar referencias para mejorar la evaluación automática.</p>
+
+        <div className="space-y-3">
+          { Object.keys(VOCAB).map(cat => (
+            <Accordion key={cat} title={cat} count={VOCAB[cat].length}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                { VOCAB[cat].map(w => (
+                  <div key={w} className="p-2 bg-white/80 rounded flex justify-between items-center">
+                    <div className="text-sm font-medium">{w}</div>
+                    <div className="flex gap-1">
+                      <button className="px-2 py-1 text-xs border rounded" onClick={()=>{ localStorage.setItem('gestar_selected_cat',cat); localStorage.setItem('gestar_selected_word',w); onOpenLessons(); }}>Estudiar</button>
+                      <button className="px-2 py-1 text-xs bg-indigo-600 text-white rounded" onClick={()=>{ localStorage.setItem('gestar_selected_cat',cat); localStorage.setItem('gestar_selected_word',w); onOpenPractice(); }}>Practicar</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Accordion>
+          )) }
+        </div>
       </div>
     );
   }
 
-  /******************************************************************
-   * AuthPanel (registro / login) con validación
-   ******************************************************************/
-  function AuthPanel({ onCreate, onLogin, users, onDelete, message }) {
+  function Accordion({ title, count, children }){
+    const [open, setOpen] = useState(false);
+    return (
+      <div className="card p-3">
+        <div className="flex items-center justify-between cursor-pointer" onClick={()=>setOpen(!open)}>
+          <div>
+            <div className="text-lg font-semibold">{title}</div>
+            <div className="text-sm muted">{count} items</div>
+          </div>
+          <div className="text-indigo-600 font-bold">{open ? '—' : '+'}</div>
+        </div>
+        { open && <div className="mt-3">{children}</div> }
+      </div>
+    );
+  }
+
+  /******************** Auth Panel ********************/
+  function AuthPanel({ onCreate, onLogin, users, onDelete, message }){
     const [mode, setMode] = useState('login');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
-    const [loading, setLoading] = useState(false);
 
-    async function handleCreate() {
-      setLoading(true);
+    async function handleCreate(){
       try {
-        if (password.length < 6) throw new Error('Contraseña mínima 6 caracteres');
-        if (password !== confirm) throw new Error('Confirmación no coincide');
+        if(password.length < 6) throw new Error('Contraseña mínima 6 caracteres');
+        if(password !== confirm) throw new Error('Confirmación no coincide');
         await onCreate(username,password);
       } catch(e){ alert(e.message); }
-      setLoading(false);
     }
-    async function handleLogin(){ setLoading(true); try{ await onLogin(username,password); } catch(e){ alert(e.message); } setLoading(false); }
+    async function handleLogin(){ try { await onLogin(username,password); } catch(e){ alert(e.message); } }
 
     return (
       <div>
         <div className="flex gap-2 mb-4">
-          <button className={`px-3 py-2 rounded ${mode==='login'?'bg-indigo-600 text-white':'border'}`} onClick={()=>setMode('login')}>Entrar</button>
-          <button className={`px-3 py-2 rounded ${mode==='register'?'bg-indigo-600 text-white':'border'}`} onClick={()=>setMode('register')}>Registro</button>
+          <button className={`px-3 py-2 rounded ${mode==='login' ? 'bg-indigo-600 text-white' : 'border' }`} onClick={()=>setMode('login')}>Entrar</button>
+          <button className={`px-3 py-2 rounded ${mode==='register' ? 'bg-indigo-600 text-white' : 'border' }`} onClick={()=>setMode('register')}>Registro</button>
         </div>
 
         <div>
           <input className="w-full p-2 border rounded mb-2" placeholder="Usuario" value={username} onChange={e=>setUsername(e.target.value)} />
-          <input className="w-full p-2 border rounded mb-2" placeholder="Contraseña (mín 6)" value={password} type="password" onChange={e=>setPassword(e.target.value)} />
-          {mode==='register' && <input className="w-full p-2 border rounded mb-2" placeholder="Confirmar contraseña" value={confirm} type="password" onChange={e=>setConfirm(e.target.value)} />}
-          {mode==='login' ? (
-            <button className="w-full px-3 py-2 bg-green-600 text-white rounded" onClick={handleLogin} disabled={loading}>Entrar</button>
-          ) : (
-            <button className="w-full px-3 py-2 bg-blue-600 text-white rounded" onClick={handleCreate} disabled={loading}>Crear cuenta</button>
-          )}
+          <input className="w-full p-2 border rounded mb-2" placeholder="Contraseña" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+          { mode === 'register' && <input className="w-full p-2 border rounded mb-2" placeholder="Confirmar contraseña" type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} /> }
+          { mode === 'login' ? <button className="w-full px-3 py-2 bg-green-600 text-white rounded" onClick={handleLogin}>Entrar</button> :
+            <button className="w-full px-3 py-2 bg-blue-600 text-white rounded" onClick={handleCreate}>Crear cuenta</button> }
         </div>
 
         <div className="mt-4">
           <div className="text-sm mb-2">Usuarios guardados</div>
           <ul className="space-y-2">
-            {users.length===0 && <li className="text-sm text-muted">Ninguno</li>}
-            {users.map(u => (
+            { users.length === 0 && <li className="text-sm muted">Ninguno</li> }
+            { users.map(u => (
               <li key={u} className="flex justify-between items-center p-2 bg-white rounded">
                 <div>{u}</div>
                 <div className="flex gap-2">
-                  <button className="px-2 py-1 border" onClick={() => { const pwd = prompt('Contraseña para ' + u); if (pwd) onLogin(u,pwd); }}>Entrar</button>
+                  <button className="px-2 py-1 border" onClick={() => { const pwd = prompt('Contraseña para '+u); if(pwd) onLogin(u,pwd); }}>Entrar</button>
                   <button className="px-2 py-1 border text-red-600" onClick={()=>onDelete(u)}>Borrar</button>
                 </div>
               </li>
-            ))}
+            )) }
           </ul>
         </div>
 
-        {message && <div className="mt-3 text-sm text-red-600">{message}</div>}
+        { message && <div className="mt-3 text-sm text-red-600">{message}</div> }
       </div>
     );
   }
 
-  /******************************************************************
-   * LessonsArea: captura de referencia + test automático (Handpose fallback)
-   ******************************************************************/
-  function LessonsArea({ user, onSave, onBack }) {
+  /******************** Lessons (capture references) ********************/
+  function Lessons({ user, onSave, onBack }){
     const selectedCat = localStorage.getItem('gestar_selected_cat') || Object.keys(VOCAB)[0];
     const [category, setCategory] = useState(selectedCat);
     const [queue, setQueue] = useState(VOCAB[category].slice());
     const [idx, setIdx] = useState(0);
 
-    const [handModel, setHandModel] = useState(null);
-    const videoRef = useRef(null);
-    const overlayRef = useRef(null);
-    const [cameraOn, setCameraOn] = useState(false);
-    const [running, setRunning] = useState(false);
-    const [frames, setFrames] = useState(0);
-    const [correct, setCorrect] = useState(0);
-    const [accuracy, setAccuracy] = useState(0);
-    const [smoothed, setSmoothed] = useState([]);
-
     useEffect(()=>{ setQueue(VOCAB[category].slice()); setIdx(0); }, [category]);
-
-    useEffect(()=>{ let mounted=true; async function load() { try { const m = await handpose.load(); if(!mounted) return; setHandModel(m); } catch(e){ console.warn('handpose load failed',e);} } load(); return ()=>{ mounted=false }; }, []);
-
-    async function startCamera(){
-      try {
-        const s = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false });
-        videoRef.current.srcObject = s; await videoRef.current.play(); setCameraOn(true);
-      } catch(e){ alert('Error abriendo cámara: '+e.message); }
-    }
-    function stopCamera(){
-      const s = videoRef.current?.srcObject; if(s) s.getTracks().forEach(t=>t.stop()); if(videoRef.current) videoRef.current.srcObject = null; setCameraOn(false);
-      const ctx = overlayRef.current?.getContext('2d'); if(ctx) ctx.clearRect(0,0,overlayRef.current.width,overlayRef.current.height);
-      setRunning(false);
-    }
-
-    function captureCanvas(){
-      const v = videoRef.current; if(!v) return null;
-      const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; const ctx = c.getContext('2d'); ctx.drawImage(v,0,0);
-      return c;
-    }
-
-    function drawOverlay(preds){
-      const canvas = overlayRef.current; if(!canvas || !videoRef.current) return;
-      canvas.width = videoRef.current.videoWidth; canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
-      if(preds && preds.length>0){
-        preds.forEach(p => {
-          const tl = p.boundingBox.topLeft; const br = p.boundingBox.bottomRight;
-          const x = tl[0], y = tl[1], w = br[0]-tl[0], h = br[1]-tl[1];
-          ctx.strokeStyle = 'rgba(59,130,246,0.95)'; ctx.lineWidth = 3; ctx.strokeRect(x,y,w,h);
-        });
-      }
-    }
-
-    function computeEmbedding(pred){
-      if(!pred) return null;
-      return kpToVector(pred.landmarks || pred.landmarks3D || []);
-    }
-
-    async function captureReference(word){
-      if(!cameraOn) await startCamera();
-      const samples = [];
-      for(let i=0;i<REFERENCE_SAMPLES;i++){
-        await new Promise(r=>setTimeout(r,300));
-        const canvas = captureCanvas(); if(!canvas) continue;
-        if(handModel){
-          const preds = await handModel.estimateHands(canvas);
-          drawOverlay(preds);
-          if(preds && preds.length>0){
-            const emb = computeEmbedding(preds[0]); if(emb) samples.push(emb);
-          }
-        }
-      }
-      if(samples.length===0){ alert('No se detectaron manos. Mejorá la iluminación y la posición.'); return; }
-      // mean embedding
-      const mean = samples[0].slice();
-      for(let i=1;i<samples.length;i++) for(let j=0;j<mean.length;j++) mean[j]+=samples[i][j];
-      for(let j=0;j<mean.length;j++) mean[j]/=samples.length;
-      // save
-      const key = category+':'+word;
-      const data = {...user.data}; data.refs = data.refs || {}; data.refs[key] = { embedding: mean, created: new Date().toISOString() };
-      onSave(data); alert('Referencia guardada para: '+word);
-    }
-
-    async function runAutoTest(word){
-      if(!cameraOn) await startCamera();
-      setRunning(true); setFrames(0); setCorrect(0); setAccuracy(0); setSmoothed([]);
-      const endAt = Date.now() + TEST_DURATION_SECONDS*1000;
-      return new Promise((resolve)=>{
-        const interval = setInterval(async ()=>{
-          if(Date.now() >= endAt){ clearInterval(interval); setRunning(false); resolve({frames, correct, accuracy}); return; }
-          const canvas = captureCanvas(); if(!canvas) return;
-          let pred = null;
-          if(window.lsa64 && window.lsa64.predict){
-            try { pred = await window.lsa64.predict(canvas); }
-            catch(e){ console.warn('lsa64 error', e); }
-          } else if(handModel){
-            try {
-              const preds = await handModel.estimateHands(canvas);
-              drawOverlay(preds);
-              if(preds && preds.length>0){
-                const emb = computeEmbedding(preds[0]);
-                const refKey = category+':'+word;
-                const refs = (user.data.refs && user.data.refs[refKey]) || null;
-                if(emb && refs && refs.embedding){
-                  const sim = cosineSim(emb, refs.embedding);
-                  pred = { label: word, confidence: (sim+1)/2 };
-                } else {
-                  pred = { label: 'mano', confidence: 0.5 };
-                }
-              }
-            } catch(e){ console.warn(e); }
-          }
-
-          setFrames(f=>f+1);
-          if(pred && pred.label){
-            setSmoothed(prev => {
-              const next = [...prev, pred].slice(-SMOOTHING_WINDOW);
-              // weighted majority
-              const counts = {};
-              next.forEach(p => { const k = p.label.toLowerCase(); counts[k] = (counts[k]||0) + (p.confidence||0); });
-              const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-              const top = entries[0] ? entries[0][0] : null;
-              const topConf = entries[0] ? entries[0][1]/next.length : 0;
-              if(top && top.toLowerCase() === word.toLowerCase() && topConf >= CONFIDENCE_THRESHOLD){
-                setCorrect(c=>c+1);
-                const newAcc = (correct + 1)/(frames + 1);
-                setAccuracy(newAcc);
-              } else {
-                const newAcc = correct / (frames + 1);
-                setAccuracy(newAcc);
-              }
-              return next;
-            });
-          }
-        }, CAPTURE_INTERVAL_MS);
-      });
-    }
-
-    async function doTestAndAdvance(){
-      const word = queue[idx];
-      if(!word) { alert('No hay items'); return; }
-      setMsg('Ejecutando test para: '+word);
-      const res = await runAutoTest(word);
-      const passed = res.accuracy >= REQUIRED_ACCURACY;
-      const data = {...user.data};
-      if(passed){ const gain = Math.round(10 + res.accuracy*20); data.xp = (data.xp||0) + gain; data.streak = (data.streak||0)+1; if(data.streak % 7 === 0) data.badges = Array.from(new Set([...(data.badges||[]),'7-day streak'])); alert(`Resultado: ${(res.accuracy*100).toFixed(0)}% — APROBADO — +${gain} XP`); }
-      else { data.streak = 0; alert(`Resultado: ${(res.accuracy*100).toFixed(0)}% — NO APROBADO`); }
-      onSave(data);
-
-      // advance
-      setIdx(i => {
-        const next = i+1;
-        if(next >= queue.length) { alert('Lección terminada'); return i; }
-        return next;
-      });
-      setMsg('');
-    }
 
     return (
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-semibold">Lecciones — {category}</h2>
-            <div className="text-sm text-muted">Capturá referencias para mejorar la evaluación automática.</div>
+            <div className="text-sm muted">Seleccioná un ítem y podés capturar una referencia (mejora la evaluación)</div>
           </div>
           <div className="flex gap-2">
-            <select className="p-2 border rounded" value={category} onChange={(e)=>{ setCategory(e.target.value); setQueue(VOCAB[e.target.value].slice()); setIdx(0); }}>
-              {Object.keys(VOCAB).map(k=> <option key={k} value={k}>{k}</option>)}
+            <select className="p-2 border rounded" value={category} onChange={e=>{ setCategory(e.target.value); setQueue(VOCAB[e.target.value].slice()); setIdx(0); }} >
+              { Object.keys(VOCAB).map(k => <option key={k} value={k}>{k}</option>) }
             </select>
-            <button className="px-3 py-2 border rounded" onClick={()=>{ stopCamera(); onBack(); }}>Volver</button>
+            <button className="px-3 py-2 border rounded" onClick={onBack}>Volver</button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <div className="p-4 bg-white rounded">
+              <div className="text-sm muted">Prompt actual</div>
+              <div className="text-3xl font-bold my-3">{queue[idx]}</div>
+              <div className="text-sm muted">Instrucción:</div>
+              <div className="p-3 bg-gray-50 rounded mt-2 text-sm">{INSTRUCTIONS[queue[idx]] || 'Mostrá tu mano frente a la cámara y realizá la seña. Mantener la mano dentro del cuadro.'}</div>
+              <div className="mt-3 flex gap-2">
+                <CaptureReferenceButton user={user} word={queue[idx]} onSave={onSave} />
+              </div>
+            </div>
+          </div>
+          <div className="md:col-span-1">
+            <div className="p-3 bg-white rounded">
+              <h3 className="font-semibold mb-2">Cola</h3>
+              <ul className="space-y-1 max-h-72 overflow-auto">
+                { queue.map((it,i)=>(
+                  <li key={i} className={`p-2 rounded flex justify-between items-center ${i===idx ? 'border-l-4 border-indigo-500' : ''}`}>
+                    <div>{it}</div>
+                    <div><button className="px-2 py-1 border rounded text-xs" onClick={()=>setIdx(i)}>Ir</button></div>
+                  </li>
+                )) }
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function CaptureReferenceButton({ user, word, onSave }){
+    const [camera, setCamera] = useState(null);
+    const videoRef = useRef(null);
+    const overlayRef = useRef(null);
+    const [handModelReady, setHandModelReady] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(()=> {
+      // nothing: we'll create camera on demand
+      return () => {
+        if(camera) camera.stop();
+      };
+    }, []);
+
+    async function startCameraAndLoad(){
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices) { alert('Tu navegador no soporta cámara'); return null; }
+      const video = videoRef.current;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false });
+        video.srcObject = stream;
+        await video.play();
+        // init MediaPipe Hands
+        // hands is created below in capture function to be fresh
+        return stream;
+      } catch(e){
+        alert('No se pudo iniciar la cámara: ' + e.message);
+        return null;
+      }
+    }
+
+    async function captureReference(){
+      setLoading(true);
+      const stream = await startCameraAndLoad();
+      if(!stream){ setLoading(false); return; }
+      // initialize MediaPipe Hands
+      const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+      hands.setOptions({maxNumHands:2, minDetectionConfidence:0.3, minTrackingConfidence:0.3});
+      // we'll run hand detection on short intervals and save embeddings
+      const captureCount = REFERENCE_SAMPLES;
+      const embeddings = [];
+      const video = videoRef.current;
+      // helper: estimate once using hands.send({image:video})
+      hands.onResults((results) => {
+        if(results.multiHandLandmarks && results.multiHandLandmarks.length>0){
+          const lm = results.multiHandLandmarks[0]; // first hand
+          const vec = landmarksToVector(lm);
+          if(vec) embeddings.push(vec);
+        }
+      });
+      const cameraRunner = new Camera(video, {
+        onFrame: async () => { await hands.send({image: video}); },
+        width: 640,
+        height: 480
+      });
+      cameraRunner.start();
+      // collect samples over time
+      const start = Date.now();
+      while(embeddings.length < captureCount && (Date.now()-start) < 8000){
+        await new Promise(r => setTimeout(r, 300));
+      }
+      cameraRunner.stop();
+      // stop stream
+      const tracks = stream.getTracks(); tracks.forEach(t=>t.stop());
+      if(embeddings.length === 0){ alert('No se detectaron manos. Intentá mejorar la iluminación y centrar la mano.'); setLoading(false); return; }
+      // compute mean embedding
+      const mean = embeddings[0].slice();
+      for(let i=1;i<embeddings.length;i++) for(let j=0;j<mean.length;j++) mean[j]+=embeddings[i][j];
+      for(let j=0;j<mean.length;j++) mean[j]/=embeddings.length;
+      // save
+      const key = (localStorage.getItem('gestar_selected_cat') || Object.keys(VOCAB)[0]) + ':' + word;
+      const data = {...user.data}; data.refs = data.refs || {}; data.refs[key] = { embedding: mean, created: new Date().toISOString() };
+      onSave(data);
+      alert('Referencia guardada para ' + word + ' — muestras: ' + embeddings.length);
+      setLoading(false);
+    }
+
+    return (
+      <div>
+        <div className="flex gap-2">
+          <button className="px-3 py-2 bg-indigo-600 text-white rounded" onClick={captureReference} disabled={loading}>{loading ? 'Capturando...' : 'Capturar referencia'}</button>
+        </div>
+        {/* hidden video used in capture flow */}
+        <div style={{display:'none'}}>
+          <video ref={videoRef} playsInline muted></video>
+          <canvas ref={overlayRef}></canvas>
+        </div>
+      </div>
+    );
+  }
+
+  /******************** Practice (camera + auto test) ********************/
+  function Practice({ user, onSave, onBack }){
+    const selectedCat = localStorage.getItem('gestar_selected_cat') || Object.keys(VOCAB)[0];
+    const selectedWord = localStorage.getItem('gestar_selected_word') || null;
+    const [category, setCategory] = useState(selectedCat);
+    const [queue, setQueue] = useState(VOCAB[category].slice());
+    const [idx, setIdx] = useState(queue.indexOf(selectedWord) >= 0 ? queue.indexOf(selectedWord) : 0);
+
+    useEffect(()=>{ setQueue(VOCAB[category].slice()); setIdx(0); }, [category]);
+
+    // refs & states for camera & detection
+    const videoRef = useRef(null);
+    const overlayRef = useRef(null);
+    const handsRef = useRef(null);
+    const cameraRef = useRef(null);
+
+    const [cameraOn, setCameraOn] = useState(false);
+    const [running, setRunning] = useState(false);
+    const [frames, setFrames] = useState(0);
+    const [correct, setCorrect] = useState(0);
+    const [accuracy, setAccuracy] = useState(0);
+    const [statusText, setStatusText] = useState('');
+
+    // prepare MediaPipe Hands (single instance)
+    useEffect(()=> {
+      const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+      hands.setOptions({ maxNumHands: 2, minDetectionConfidence: 0.3, minTrackingConfidence: 0.3 });
+      hands.onResults(onResults);
+      handsRef.current = hands;
+      return () => {
+        // nothing
+      };
+    }, []);
+
+    function onResults(results){
+      drawOverlay(results.multiHandLandmarks);
+      // store last landmarks in a ref for evaluation
+      lastDetection.current = results.multiHandLandmarks && results.multiHandLandmarks[0] ? results.multiHandLandmarks[0] : null;
+      lastDetection.time = Date.now();
+    }
+
+    function drawOverlay(multiLandmarks){
+      const canvas = overlayRef.current;
+      const video = videoRef.current;
+      if(!canvas || !video) return;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(multiLandmarks && multiLandmarks.length>0){
+        multiLandmarks.forEach(lm => {
+          // bounding box approx
+          let xs = lm.map(p=>p.x*canvas.width), ys = lm.map(p=>p.y*canvas.height);
+          const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+          ctx.strokeStyle = 'rgba(34,197,94,0.95)'; ctx.lineWidth = 3; ctx.strokeRect(minX, minY, maxX-minX, maxY-minY);
+        });
+      }
+    }
+
+    const lastDetection = useRef(null);
+
+    async function startCamera(){
+      try {
+        const video = videoRef.current;
+        const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: 'user', width:640, height:480 }, audio:false });
+        video.srcObject = stream;
+        await video.play();
+        // create camera utils that feeds the hands model
+        cameraRef.current = new Camera(video, {
+          onFrame: async () => { await handsRef.current.send({ image: video }); },
+          width: 640, height: 480
+        });
+        cameraRef.current.start();
+        setCameraOn(true);
+        setStatusText('Cámara activa. Alineá la mano con el cuadro.');
+      } catch(e){
+        alert('Error iniciando cámara: ' + e.message);
+      }
+    }
+    function stopCamera(){
+      if(cameraRef.current) cameraRef.current.stop();
+      const v = videoRef.current;
+      if(v && v.srcObject) v.srcObject.getTracks().forEach(t=>t.stop());
+      if(videoRef.current) videoRef.current.srcObject = null;
+      setCameraOn(false);
+      setStatusText('Cámara detenida.');
+    }
+
+    // core test loop using lastDetection
+    async function runTest(word){
+      if(!cameraOn) await startCamera();
+      setRunning(true); setFrames(0); setCorrect(0); setAccuracy(0);
+      const endAt = Date.now() + TEST_DURATION_SECONDS*1000;
+      let localFrames = 0, localCorrect = 0;
+      while(Date.now() < endAt){
+        await new Promise(r => setTimeout(r, CAPTURE_INTERVAL_MS));
+        localFrames++;
+        const detected = lastDetection.current && lastDetection.current.time && (Date.now() - lastDetection.current.time < 800);
+        if(!detected){
+          setStatusText('No se detectaron manos. Intentá centrar la mano y acercarla (40-60 cm) o mejorar la iluminación.');
+          // continue but count as not-correct
+          setFrames(localFrames); setCorrect(localCorrect);
+          setAccuracy(localCorrect / localFrames);
+          continue;
+        }
+        setStatusText('Mano detectada. Evaluando...');
+        const emb = landmarksToVector(lastDetection.current);
+        const refKey = category + ':' + word;
+        const refs = (user.data.refs && user.data.refs[refKey]) || null;
+        let matchScore = 0;
+        if(refs && refs.embedding){
+          matchScore = (cosineSim(emb, refs.embedding) + 1) / 2; // map -1..1 to 0..1
+        } else {
+          // less strict fallback: if any hand present, partial credit
+          matchScore = 0.5;
+        }
+        // thresholding
+        const ok = matchScore >= CONFIDENCE_THRESHOLD;
+        if(ok) localCorrect++;
+        setFrames(localFrames); setCorrect(localCorrect);
+        setAccuracy(localCorrect / localFrames);
+      }
+      setRunning(false);
+      // results
+      const finalAcc = (localFrames === 0) ? 0 : (localCorrect / localFrames);
+      // award xp
+      const data = {...user.data};
+      if(finalAcc >= REQUIRED_ACCURACY){
+        const gain = Math.round(10 + finalAcc * 20);
+        data.xp = (data.xp || 0) + gain;
+        data.streak = (data.streak || 0) + 1;
+        if(data.streak % 7 === 0) data.badges = Array.from(new Set([...(data.badges||[]),'7-day streak']));
+        alert(`Resultado: ${(finalAcc*100).toFixed(0)}% — APROBADO — +${gain} XP`);
+      } else {
+        data.streak = 0;
+        alert(`Resultado: ${(finalAcc*100).toFixed(0)}% — NO APROBADO`);
+      }
+      onSave(data);
+    }
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Práctica — {category}</h2>
+            <div className="text-sm muted">Prompt: {queue[idx]}</div>
+            <div className="text-sm muted mt-1">Instrucción: {INSTRUCTIONS[queue[idx]] || 'Mostrá tu mano frente a la cámara y realizá la seña.'}</div>
+          </div>
+          <div className="flex gap-2">
+            <select className="p-2 border rounded" value={category} onChange={e=>{ setCategory(e.target.value); setQueue(VOCAB[e.target.value].slice()); setIdx(0); }}>
+              { Object.keys(VOCAB).map(k => <option key={k} value={k}>{k}</option>) }
+            </select>
+            <button className="px-3 py-2 border rounded" onClick={onBack}>Volver</button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <div className="relative bg-black rounded overflow-hidden">
-              <video ref={videoRef} className="w-full h-64 object-cover" playsInline muted autoPlay />
-              <canvas ref={overlayRef} className="overlay" />
+              <video ref={videoRef} className="w-full h-64 object-cover" playsInline muted autoPlay></video>
+              <canvas ref={overlayRef} className="overlay"></canvas>
             </div>
 
             <div className="mt-3 flex gap-2">
-              <button className="px-3 py-2 bg-indigo-600 text-white rounded" onClick={()=> cameraOn ? stopCamera() : startCamera()}>{cameraOn ? 'Detener cámara' : 'Activar cámara'}</button>
-              <button className="px-3 py-2 border rounded" onClick={()=>captureReference(queue[idx])}>Capturar referencia</button>
-              <button className="px-3 py-2 bg-green-600 text-white rounded" onClick={()=>doTestAndAdvance()} disabled={running}>{running ? 'Test en curso...' : 'Iniciar test automático'}</button>
+              <button className="px-3 py-2 rounded bg-indigo-600 text-white" onClick={()=> cameraOn ? stopCamera() : startCamera()}>{cameraOn ? 'Detener cámara' : 'Activar cámara'}</button>
+              <button className="px-3 py-2 border rounded" onClick={()=> runTest(queue[idx])} disabled={running}>{ running ? 'Test en curso...' : 'Iniciar test automático' }</button>
+              <button className="px-3 py-2 border rounded" onClick={()=>{ // advance manually
+                const next = idx+1; if(next < queue.length) setIdx(next); else alert('Fin de la lección');
+              }}>Siguiente</button>
             </div>
 
             <div className="mt-3 p-3 bg-white rounded">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <div>
-                  <div className="text-sm text-gray-500">Prompt actual</div>
+                  <div className="text-sm muted">Prompt actual</div>
                   <div className="text-xl font-bold">{queue[idx] || '—'}</div>
+                  <div className="text-xs muted mt-1">Consejo: mantené la mano centrada y a ~40-60 cm de la cámara; mové lentamente.</div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm">Frames: <strong>{frames}</strong></div>
@@ -520,6 +692,7 @@
                   <div className="text-sm">Precisión: <strong>{(accuracy*100).toFixed(0)}%</strong></div>
                 </div>
               </div>
+              <div className="mt-3 text-sm muted">{statusText}</div>
             </div>
           </div>
 
@@ -527,16 +700,14 @@
             <div className="p-3 bg-white rounded">
               <h3 className="font-semibold mb-2">Cola</h3>
               <ul className="space-y-1 max-h-72 overflow-auto">
-                {queue.map((it,i)=>(
-                  <li key={i} className={`p-2 rounded flex justify-between items-center ${i===idx?'border-l-4 border-indigo-500':''}`}>
+                { queue.map((it,i)=>(
+                  <li key={i} className={`p-2 rounded flex justify-between items-center ${i===idx ? 'border-l-4 border-indigo-500' : ''}`}>
                     <div>{it}</div>
                     <div><button className="px-2 py-1 border rounded text-xs" onClick={()=>setIdx(i)}>Ir</button></div>
                   </li>
-                ))}
+                )) }
               </ul>
-              <div className="mt-3 text-sm text-gray-600">
-                Consejos: iluminación, manos centradas, movimientos lentos. Capturar referencias mejora la exactitud.
-              </div>
+              <div className="mt-3 text-sm muted">Si la detección falla constantemente: probá en Chrome, acercá la mano o aumentá la luz frontal (evitá luz intensa desde atrás).</div>
             </div>
           </div>
         </div>
@@ -544,54 +715,8 @@
     );
   }
 
-  /******************************************************************
-   * PracticeArea: práctica manual y rápida (sin test automático)
-   ******************************************************************/
-  function PracticeArea({ user, onSave, onBack }) {
-    const selectedCat = localStorage.getItem('gestar_selected_cat') || Object.keys(VOCAB)[0];
-    const selectedWord = localStorage.getItem('gestar_selected_word') || null;
-    const [category, setCategory] = useState(selectedCat);
-    const [queue, setQueue] = useState(VOCAB[category].slice());
-    const [i, setI] = useState(queue.indexOf(selectedWord) >= 0 ? queue.indexOf(selectedWord) : 0);
-
-    useEffect(()=>{ setQueue(VOCAB[category].slice()); setI(0); }, [category]);
-
-    function markCorrect(){
-      const data = {...user.data}; data.xp = (data.xp||0)+8; data.streak = (data.streak||0)+1;
-      if(data.streak % 7 === 0) data.badges = Array.from(new Set([...(data.badges||[]),'7-day streak']));
-      onSave(data);
-      const next = i+1; if(next < queue.length) setI(next); else alert('Lección terminada');
-    }
-
-    return (
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Práctica</h2>
-          <div className="flex gap-2">
-            <select className="p-2 border rounded" value={category} onChange={e=>{ setCategory(e.target.value); localStorage.setItem('gestar_selected_cat', e.target.value); }}>
-              {Object.keys(VOCAB).map(k=> <option key={k} value={k}>{k}</option>)}
-            </select>
-            <button className="px-3 py-2 border rounded" onClick={onBack}>Volver</button>
-          </div>
-        </div>
-
-        <div className="p-4 bg-white rounded">
-          <div className="text-sm text-gray-500">Prompt</div>
-          <div className="text-4xl font-bold my-4">{queue[i]}</div>
-          <div className="flex gap-2">
-            <button className="px-3 py-2 bg-green-600 text-white rounded" onClick={markCorrect}>Marcar como correcto</button>
-            <button className="px-3 py-2 border rounded" onClick={()=>{ const nxt=i+1; if(nxt<queue.length) setI(nxt); else alert('Terminaste la lección'); }}>Siguiente</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  /******************************************************************
-   * RENDER
-   ******************************************************************/
+  /******************** Render ********************/
   ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-
   </script>
 </body>
 </html>
