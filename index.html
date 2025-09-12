@@ -1,119 +1,159 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>GestAR - Aprende Lengua de Señas</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>GestAR — Aprendé LSA</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React + ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- TFJS + Handpose -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.8.0/dist/tf-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.8.0/dist/tf-backend-webgl.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose@0.0.7/dist/handpose.min.js"></script>
+
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      color: #fff;
-    }
-    header {
-      width: 100%;
-      padding: 1rem;
-      text-align: center;
-      background: rgba(0,0,0,0.3);
-    }
-    main {
-      width: 100%;
-      max-width: 800px;
-      background: #ffffff22;
-      border-radius: 16px;
-      padding: 2rem;
-      margin-top: 1rem;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    }
-    h1, h2 {
-      margin: 0.5rem 0;
-    }
-    .categoria {
-      background: rgba(255,255,255,0.15);
-      border-radius: 12px;
-      padding: 1rem;
-      margin: 1rem 0;
-    }
-    .categoria h3 {
-      margin-top: 0;
-      text-transform: capitalize;
-    }
-    .palabra {
-      display: inline-block;
-      margin: 0.3rem;
-      padding: 0.5rem 0.8rem;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.2);
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .palabra:hover {
-      background: rgba(255,255,255,0.35);
-    }
-    #output {
-      margin-top: 1rem;
-      font-size: 1.2rem;
-      background: rgba(0,0,0,0.4);
-      padding: 1rem;
-      border-radius: 8px;
-    }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(135deg,#4facfe 0%,#8156ff 100%); min-height:100vh; }
+    .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); }
+    .card { background: white; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+    canvas.overlay { position:absolute; left:0; top:0; pointer-events: none; }
   </style>
 </head>
-<body>
-  <header>
-    <h1>GestAR ✋</h1>
-    <h2>Aprende Lengua de Señas Argentina</h2>
-  </header>
-  <main>
-    <p>Selecciona una palabra para practicar. (En una versión completa, acá se integraría la cámara y el detector de señas).</p>
-    <div id="contenedor"></div>
-    <div id="output">👉 Haz clic en una palabra para comenzar.</div>
-  </main>
+<body class="min-h-screen flex items-center justify-center p-6">
+  <div id="root" class="w-full max-w-6xl"></div>
 
-  <script>
-    async function cargarVocabulario() {
-      try {
-        const resp = await fetch('vocabulario.json');
-        if (!resp.ok) throw new Error("No se pudo cargar vocabulario.json");
-        const data = await resp.json();
+  <script type="text/babel">
+  const { useState, useEffect, useRef } = React;
 
-        const contenedor = document.getElementById('contenedor');
-        contenedor.innerHTML = "";
+  //////////////////////////////////////////////////////////////////////
+  // CONFIG
+  const REQUIRED_ACCURACY = 0.8;      // 80% approval threshold
+  const CONFIDENCE_THRESHOLD = 0.55;  // model confidence threshold
+  const TEST_DURATION_SECONDS = 8;
+  const CAPTURE_INTERVAL_MS = 150;
+  const SMOOTHING_WINDOW = 7;
+  const REFERENCE_SAMPLES = 6; // number of captures to form a reference embedding
 
-        for (const categoria in data) {
-          const catDiv = document.createElement('div');
-          catDiv.className = "categoria";
+  //////////////////////////////////////////////////////////////////////
+  // VOCABULARIO (también podés separar a vocabulario.json si preferís)
+  const VOCAB = {
+    "Letras": ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","Ñ","O","P","Q","R","S","T","U","V","W","X","Y","Z"],
+    "Familia": ["madre","padre","hermano","hermana","hijo","hija","esposo","esposa","bebé","abuelo","abuela","tío","tía","primo","prima"],
+    "Comidas y Bebidas": ["pan","milanesa","pizza","empanada","manzana","agua","café","leche","asado","ensalada"],
+    "Trabajos": ["doctor","maestro","cocinero","abogado","ingeniero","programador","bombero","policía","arquitecto","estudiante"],
+    "Animales": ["perro","gato","pájaro","vaca","caballo","conejo","tigre","león","elefante","jirafa"],
+    "Emociones": ["feliz","triste","enojo","sorpresa","miedo","orgullo","vergüenza","amor","ansiedad","relajado"],
+    "Frases Diarias": ["hola","gracias","por favor","lo siento","adios","buen día","buenas noches","¿cómo estás?","todo bien","hasta luego"]
+  };
 
-          const titulo = document.createElement('h3');
-          titulo.textContent = categoria;
-          catDiv.appendChild(titulo);
+  //////////////////////////////////////////////////////////////////////
+  // UTIL: PBKDF2 hashing (WebCrypto)
+  async function genSalt() {
+    const buf = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  async function hashPassword(password, saltHex) {
+    const enc = new TextEncoder();
+    const pw = enc.encode(password);
+    const salt = new Uint8Array(saltHex.match(/.{1,2}/g).map(h=>parseInt(h,16)));
+    const key = await crypto.subtle.importKey('raw', pw, {name:'PBKDF2'}, false, ['deriveBits']);
+    const derived = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations: 250000, hash:'SHA-256'}, key, 256);
+    const hash = new Uint8Array(derived);
+    return Array.from(hash).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
 
-          data[categoria].forEach(item => {
-            const btn = document.createElement('span');
-            btn.className = "palabra";
-            btn.textContent = item.palabra;
-            btn.onclick = () => {
-              document.getElementById('output').textContent =
-                `🔤 Seleccionaste: ${item.palabra} (categoría: ${categoria})`;
-            };
-            catDiv.appendChild(btn);
-          });
+  // LocalStorage users management
+  const STORAGE_KEY = 'gestar_users_v1';
+  function loadAllUsers() { try { const raw = localStorage.getItem(STORAGE_KEY); return raw?JSON.parse(raw):{} } catch(e){return {}} }
+  function saveAllUsers(obj){ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
 
-          contenedor.appendChild(catDiv);
-        }
-      } catch (e) {
-        document.getElementById('output').textContent = "⚠️ Error cargando vocabulario: " + e.message;
-      }
+  async function createUser(username, password) {
+    const all = loadAllUsers();
+    if (!username || username.trim().length < 3) throw new Error('Usuario debe tener al menos 3 caracteres');
+    if (all[username]) throw new Error('Usuario ya existe');
+    if (!password || password.length < 6) throw new Error('Contraseña mínima 6 caracteres');
+    const salt = await genSalt(); const hash = await hashPassword(password, salt);
+    const profile = { username, salt, hash, data: { xp:0, streak:0, badges:[], refs:{}, lastLogin:null } };
+    all[username] = profile; saveAllUsers(all); return profile;
+  }
+  async function verifyLogin(username, password) {
+    const all = loadAllUsers(); const profile = all[username];
+    if (!profile) throw new Error('Usuario no encontrado');
+    const candidate = await hashPassword(password, profile.salt); if (candidate !== profile.hash) throw new Error('Contraseña incorrecta');
+    profile.data.lastLogin = new Date().toISOString(); saveAllUsers(all); return profile;
+  }
+  function saveUserData(username, data){ const all = loadAllUsers(); if(!all[username]) return false; all[username].data = data; saveAllUsers(all); return true }
+  function deleteUser(username){ const all = loadAllUsers(); delete all[username]; saveAllUsers(all) }
+
+  //////////////////////////////////////////////////////////////////////
+  // Embedding helpers (from handpose keypoints -> vector)
+  function kpToVector(kp) {
+    // kp: array of landmarks [{x,y,z},...]. We'll flatten to [x,y,z,...] and normalize.
+    if (!kp || kp.length === 0) return null;
+    const flat = [];
+    kp.forEach(p => { flat.push(p[0]); flat.push(p[1]); flat.push(p[2] || 0); });
+    // normalize (zero mean, unit norm)
+    const mean = flat.reduce((s,v)=>s+v,0)/flat.length;
+    const centered = flat.map(v=>v-mean);
+    const norm = Math.sqrt(centered.reduce((s,v)=>s+v*v,0)) || 1;
+    return centered.map(v=>v/norm);
+  }
+  function cosineSim(a,b){ if(!a||!b||a.length!==b.length) return 0; let dot=0; for(let i=0;i<a.length;i++) dot+=a[i]*b[i]; return dot; }
+
+  //////////////////////////////////////////////////////////////////////
+  // App UI
+  function App(){
+    const [stage, setStage] = useState('auth'); // auth | dash | lessons | practice
+    const [user, setUser] = useState(null);
+    const [message, setMessage] = useState('');
+    const [usersList, setUsersList] = useState(Object.keys(loadAllUsers()));
+    useEffect(()=>{ setUsersList(Object.keys(loadAllUsers())); }, []);
+
+    async function handleCreate(username,password){
+      try{ const prof = await createUser(username,password); setUser(prof); setStage('dash'); setUsersList(Object.keys(loadAllUsers())); }
+      catch(e){ setMessage(e.message); setTimeout(()=>setMessage(''),3500); }
     }
+    async function handleLogin(username,password){
+      try{ const prof = await verifyLogin(username,password); setUser(prof); setStage('dash'); setUsersList(Object.keys(loadAllUsers())); }
+      catch(e){ setMessage(e.message); setTimeout(()=>setMessage(''),3500); }
+    }
+    function handleLogout(){ setUser(null); setStage('auth'); }
+    function handleDelete(u){ if(!confirm('Borrar usuario '+u+'?')) return; deleteUser(u); setUsersList(Object.keys(loadAllUsers())); if(user && user.username===u){ handleLogout(); } }
 
-    cargarVocabulario();
-  </script>
-</body>
-</html>
+    return (
+      <div className="w-full max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 text-white flex items-center justify-center font-bold">G</div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">GestAR</h1>
+              <p className="text-sm text-white/80">Aprendé Lengua de Señas Argentina — con cámara y progreso</p>
+            </div>
+          </div>
+          <div>
+            {user ? (
+              <div className="bg-white/90 px-3 py-2 rounded flex items-center gap-3">
+                <div className="text-sm">Hola, <strong>{user.username}</strong></div>
+                <button className="px-3 py-1 rounded bg-red-500 text-white" onClick={handleLogout}>Cerrar sesión</button>
+              </div>
+            ) : (<div className="text-sm text-white/80">No estás conectado</div>)}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-1 glass p-5 card">
+            {stage === 'auth' && <AuthPanel onCreate={handleCreate} onLogin={handleLogin} users={usersList} onDelete={handleDelete} message={message} />}
+            {stage !== 'auth' && user && (
+              <div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">XP</div>
+                  <div className="text-2xl font-bold">{user.data.xp}</div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">Streak
