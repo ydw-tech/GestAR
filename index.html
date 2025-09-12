@@ -1,111 +1,119 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GestAR - Aprendé Lengua de Señas Argentina</title>
-    <!-- TailwindCSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React y ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <!-- Babel para compilar JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  </head>
-  <body class="bg-gradient-to-r from-sky-400 to-purple-500 min-h-screen flex items-center justify-center">
-    <div id="root"></div>
+<head>
+  <meta charset="UTF-8" />
+  <title>GestAR - Aprende Lengua de Señas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      color: #fff;
+    }
+    header {
+      width: 100%;
+      padding: 1rem;
+      text-align: center;
+      background: rgba(0,0,0,0.3);
+    }
+    main {
+      width: 100%;
+      max-width: 800px;
+      background: #ffffff22;
+      border-radius: 16px;
+      padding: 2rem;
+      margin-top: 1rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    h1, h2 {
+      margin: 0.5rem 0;
+    }
+    .categoria {
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+    .categoria h3 {
+      margin-top: 0;
+      text-transform: capitalize;
+    }
+    .palabra {
+      display: inline-block;
+      margin: 0.3rem;
+      padding: 0.5rem 0.8rem;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .palabra:hover {
+      background: rgba(255,255,255,0.35);
+    }
+    #output {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+      background: rgba(0,0,0,0.4);
+      padding: 1rem;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GestAR ✋</h1>
+    <h2>Aprende Lengua de Señas Argentina</h2>
+  </header>
+  <main>
+    <p>Selecciona una palabra para practicar. (En una versión completa, acá se integraría la cámara y el detector de señas).</p>
+    <div id="contenedor"></div>
+    <div id="output">👉 Haz clic en una palabra para comenzar.</div>
+  </main>
 
-    <script type="text/babel">
-      const CURRICULUM = {
-        Letras: ["A","B","C","D","E"],
-        Familia: ["madre","padre","hermano","hermana","hijo","hija"],
-        "Comidas y Bebidas": ["pan","manzana","agua","cafe","milanesa"],
-        Trabajos: ["doctor","maestro","chef","abogado","estudiante"],
-        Animales: ["perro","gato","pajaro","vaca","caballo"],
-        Emociones: ["feliz","triste","enojo","sorpresa","miedo"],
-        "Frases Diarias": ["hola","gracias","por favor","lo siento","adios"],
-      };
+  <script>
+    async function cargarVocabulario() {
+      try {
+        const resp = await fetch('vocabulario.json');
+        if (!resp.ok) throw new Error("No se pudo cargar vocabulario.json");
+        const data = await resp.json();
 
-      function App() {
-        const [user, setUser] = React.useState(localStorage.getItem("gestar_user") || "");
-        const [xp, setXp] = React.useState(Number(localStorage.getItem("gestar_xp")) || 0);
-        const [streak, setStreak] = React.useState(Number(localStorage.getItem("gestar_streak")) || 0);
-        const [selectedCategory, setSelectedCategory] = React.useState("Letras");
-        const [currentPrompt, setCurrentPrompt] = React.useState(CURRICULUM["Letras"][0]);
+        const contenedor = document.getElementById('contenedor');
+        contenedor.innerHTML = "";
 
-        React.useEffect(() => {
-          localStorage.setItem("gestar_user", user);
-          localStorage.setItem("gestar_xp", xp);
-          localStorage.setItem("gestar_streak", streak);
-        }, [user, xp, streak]);
+        for (const categoria in data) {
+          const catDiv = document.createElement('div');
+          catDiv.className = "categoria";
 
-        if (!user) {
-          return (
-            <div className="bg-white/90 p-6 rounded-2xl shadow-lg w-80 text-center">
-              <h1 className="text-xl font-bold mb-4">GestAR</h1>
-              <input
-                type="text"
-                placeholder="Ingresá tu nombre"
-                className="border p-2 w-full rounded mb-2"
-                onChange={(e) => setUser(e.target.value)}
-              />
-              <button
-                className="w-full bg-sky-500 hover:bg-sky-600 text-white p-2 rounded"
-                onClick={() => user && setUser(user)}
-              >
-                Entrar
-              </button>
-            </div>
-          );
+          const titulo = document.createElement('h3');
+          titulo.textContent = categoria;
+          catDiv.appendChild(titulo);
+
+          data[categoria].forEach(item => {
+            const btn = document.createElement('span');
+            btn.className = "palabra";
+            btn.textContent = item.palabra;
+            btn.onclick = () => {
+              document.getElementById('output').textContent =
+                `🔤 Seleccionaste: ${item.palabra} (categoría: ${categoria})`;
+            };
+            catDiv.appendChild(btn);
+          });
+
+          contenedor.appendChild(catDiv);
         }
-
-        return (
-          <div className="bg-white/95 p-6 rounded-2xl shadow-lg w-full max-w-3xl">
-            <header className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold">GestAR</h1>
-              <div>
-                <span className="mr-4">XP: <b>{xp}</b></span>
-                <span>🔥 Streak: <b>{streak}</b></span>
-              </div>
-            </header>
-
-            <div className="mb-4">
-              <select
-                className="border p-2 rounded"
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value);
-                  setCurrentPrompt(CURRICULUM[e.target.value][0]);
-                }}
-              >
-                {Object.keys(CURRICULUM).map((cat) => (
-                  <option key={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="p-4 border rounded-xl text-center">
-              <h2 className="text-xl font-bold mb-2">Practicá:</h2>
-              <div className="text-3xl font-bold mb-4">{currentPrompt}</div>
-              <button
-                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
-                onClick={() => {
-                  setXp(xp + 10);
-                  setStreak(streak + 1);
-                  const items = CURRICULUM[selectedCategory];
-                  const idx = items.indexOf(currentPrompt);
-                  setCurrentPrompt(items[(idx + 1) % items.length]);
-                }}
-              >
-                ✔️ Completado
-              </button>
-            </div>
-          </div>
-        );
+      } catch (e) {
+        document.getElementById('output').textContent = "⚠️ Error cargando vocabulario: " + e.message;
       }
+    }
 
-      const root = ReactDOM.createRoot(document.getElementById("root"));
-      root.render(<App />);
-    </script>
-  </body>
+    cargarVocabulario();
+  </script>
+</body>
 </html>
