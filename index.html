@@ -5,43 +5,50 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>GestAR — Aprendé LSA</title>
 
-  <!-- Tailwind -->
+  <!-- Tailwind + Inter font -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- React + ReactDOM -->
+  <!-- React -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- TFJS + Handpose -->
+  <!-- TensorFlow + Handpose -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.8.0/dist/tf-core.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.8.0/dist/tf-backend-webgl.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose@0.0.7/dist/handpose.min.js"></script>
 
   <style>
-    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(135deg,#4facfe 0%,#8156ff 100%); min-height:100vh; }
-    .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); }
-    .card { background: white; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
-    canvas.overlay { position:absolute; left:0; top:0; pointer-events: none; }
+    :root { --glass: rgba(255,255,255,0.9); --muted: #64748b; }
+    html,body,#root { height: 100%; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+    .app-bg { background: linear-gradient(135deg,#6ee7b7 0%,#60a5fa 50%,#9f7aea 100%); min-height:100vh; }
+    .card { background: var(--glass); border-radius: 14px; box-shadow: 0 12px 30px rgba(0,0,0,0.12); }
+    .accent { background: linear-gradient(90deg,#7c3aed,#06b6d4); -webkit-background-clip: text; background-clip:text; color: transparent; }
+    canvas.overlay { position:absolute; left:0; top:0; pointer-events:none; }
+    /* small responsive tweaks */
+    @media (max-width: 768px) { .lg\\:grid-cols-4 { grid-template-columns: 1fr; } }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
-  <div id="root" class="w-full max-w-6xl"></div>
+<body class="app-bg flex items-center justify-center p-6">
+  <div id="root" class="w-full max-w-7xl"></div>
 
   <script type="text/babel">
   const { useState, useEffect, useRef } = React;
 
-  //////////////////////////////////////////////////////////////////////
-  // CONFIG
-  const REQUIRED_ACCURACY = 0.8;      // 80% approval threshold
-  const CONFIDENCE_THRESHOLD = 0.55;  // model confidence threshold
+  /******************************************************************
+   * CONFIG
+   ******************************************************************/
+  const REQUIRED_ACCURACY = 0.80;     // 80% frames correct
+  const CONFIDENCE_THRESHOLD = 0.55;
   const TEST_DURATION_SECONDS = 8;
   const CAPTURE_INTERVAL_MS = 150;
   const SMOOTHING_WINDOW = 7;
-  const REFERENCE_SAMPLES = 6; // number of captures to form a reference embedding
+  const REFERENCE_SAMPLES = 6;
 
-  //////////////////////////////////////////////////////////////////////
-  // VOCABULARIO (también podés separar a vocabulario.json si preferís)
+  /******************************************************************
+   * VOCABULARIO (completo) - ya organizado por categoría y dificultad
+   ******************************************************************/
   const VOCAB = {
     "Letras": ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","Ñ","O","P","Q","R","S","T","U","V","W","X","Y","Z"],
     "Familia": ["madre","padre","hermano","hermana","hijo","hija","esposo","esposa","bebé","abuelo","abuela","tío","tía","primo","prima"],
@@ -49,33 +56,30 @@
     "Trabajos": ["doctor","maestro","cocinero","abogado","ingeniero","programador","bombero","policía","arquitecto","estudiante"],
     "Animales": ["perro","gato","pájaro","vaca","caballo","conejo","tigre","león","elefante","jirafa"],
     "Emociones": ["feliz","triste","enojo","sorpresa","miedo","orgullo","vergüenza","amor","ansiedad","relajado"],
-    "Frases Diarias": ["hola","gracias","por favor","lo siento","adios","buen día","buenas noches","¿cómo estás?","todo bien","hasta luego"]
+    "Frases Diarias": ["hola","gracias","por favor","lo siento","adiós","buen día","buenas noches","¿cómo estás?","todo bien","hasta luego"]
   };
 
-  //////////////////////////////////////////////////////////////////////
-  // UTIL: PBKDF2 hashing (WebCrypto)
+  /******************************************************************
+   * UTIL: almacenamiento y hash de contraseña (PBKDF2, WebCrypto)
+   ******************************************************************/
   async function genSalt() {
-    const buf = crypto.getRandomValues(new Uint8Array(16));
-    return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join('');
+    const buf = crypto.getRandomValues(new Uint8Array(16)); return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join('');
   }
   async function hashPassword(password, saltHex) {
-    const enc = new TextEncoder();
-    const pw = enc.encode(password);
+    const enc = new TextEncoder(); const pw = enc.encode(password);
     const salt = new Uint8Array(saltHex.match(/.{1,2}/g).map(h=>parseInt(h,16)));
     const key = await crypto.subtle.importKey('raw', pw, {name:'PBKDF2'}, false, ['deriveBits']);
     const derived = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations: 250000, hash:'SHA-256'}, key, 256);
-    const hash = new Uint8Array(derived);
-    return Array.from(hash).map(b=>b.toString(16).padStart(2,'0')).join('');
+    const hash = new Uint8Array(derived); return Array.from(hash).map(b=>b.toString(16).padStart(2,'0')).join('');
   }
 
-  // LocalStorage users management
-  const STORAGE_KEY = 'gestar_users_v1';
-  function loadAllUsers() { try { const raw = localStorage.getItem(STORAGE_KEY); return raw?JSON.parse(raw):{} } catch(e){return {}} }
-  function saveAllUsers(obj){ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+  const STORAGE_KEY = 'gestar_users_v2';
+  function loadAllUsers() { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; } catch(e){ return {}; } }
+  function saveAllUsers(obj) { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
 
   async function createUser(username, password) {
     const all = loadAllUsers();
-    if (!username || username.trim().length < 3) throw new Error('Usuario debe tener al menos 3 caracteres');
+    if (!username || username.trim().length < 3) throw new Error('Usuario mínimo 3 caracteres');
     if (all[username]) throw new Error('Usuario ya existe');
     if (!password || password.length < 6) throw new Error('Contraseña mínima 6 caracteres');
     const salt = await genSalt(); const hash = await hashPassword(password, salt);
@@ -85,75 +89,509 @@
   async function verifyLogin(username, password) {
     const all = loadAllUsers(); const profile = all[username];
     if (!profile) throw new Error('Usuario no encontrado');
-    const candidate = await hashPassword(password, profile.salt); if (candidate !== profile.hash) throw new Error('Contraseña incorrecta');
+    const candidate = await hashPassword(password, profile.salt);
+    if (candidate !== profile.hash) throw new Error('Contraseña incorrecta');
     profile.data.lastLogin = new Date().toISOString(); saveAllUsers(all); return profile;
   }
-  function saveUserData(username, data){ const all = loadAllUsers(); if(!all[username]) return false; all[username].data = data; saveAllUsers(all); return true }
-  function deleteUser(username){ const all = loadAllUsers(); delete all[username]; saveAllUsers(all) }
+  function saveUserData(username, data) { const all = loadAllUsers(); if (!all[username]) return false; all[username].data = data; saveAllUsers(all); return true; }
+  function deleteUser(username) { const all = loadAllUsers(); delete all[username]; saveAllUsers(all); }
 
-  //////////////////////////////////////////////////////////////////////
-  // Embedding helpers (from handpose keypoints -> vector)
+  /******************************************************************
+   * Embeddings & similarity helpers (handpose landmarks -> vector)
+   ******************************************************************/
   function kpToVector(kp) {
-    // kp: array of landmarks [{x,y,z},...]. We'll flatten to [x,y,z,...] and normalize.
     if (!kp || kp.length === 0) return null;
-    const flat = [];
-    kp.forEach(p => { flat.push(p[0]); flat.push(p[1]); flat.push(p[2] || 0); });
-    // normalize (zero mean, unit norm)
+    const flat = []; kp.forEach(p => { flat.push(p[0]); flat.push(p[1]); flat.push(p[2] || 0); });
     const mean = flat.reduce((s,v)=>s+v,0)/flat.length;
-    const centered = flat.map(v=>v-mean);
-    const norm = Math.sqrt(centered.reduce((s,v)=>s+v*v,0)) || 1;
+    const centered = flat.map(v=>v-mean); const norm = Math.sqrt(centered.reduce((s,v)=>s+v*v,0)) || 1;
     return centered.map(v=>v/norm);
   }
-  function cosineSim(a,b){ if(!a||!b||a.length!==b.length) return 0; let dot=0; for(let i=0;i<a.length;i++) dot+=a[i]*b[i]; return dot; }
+  function cosineSim(a,b) { if(!a||!b||a.length!==b.length) return 0; let dot=0; for(let i=0;i<a.length;i++) dot+=a[i]*b[i]; return dot; }
 
-  //////////////////////////////////////////////////////////////////////
-  // App UI
+  /******************************************************************
+   * APP
+   ******************************************************************/
   function App(){
-    const [stage, setStage] = useState('auth'); // auth | dash | lessons | practice
+    const [stage, setStage] = useState('landing'); // landing | auth | dashboard | lessons | practice
     const [user, setUser] = useState(null);
-    const [message, setMessage] = useState('');
     const [usersList, setUsersList] = useState(Object.keys(loadAllUsers()));
+    const [msg, setMsg] = useState('');
+
     useEffect(()=>{ setUsersList(Object.keys(loadAllUsers())); }, []);
 
-    async function handleCreate(username,password){
-      try{ const prof = await createUser(username,password); setUser(prof); setStage('dash'); setUsersList(Object.keys(loadAllUsers())); }
-      catch(e){ setMessage(e.message); setTimeout(()=>setMessage(''),3500); }
+    async function onCreate(username,password){
+      try { const prof = await createUser(username,password); setUser(prof); setStage('dashboard'); setUsersList(Object.keys(loadAllUsers())); }
+      catch(e){ setMsg(e.message); setTimeout(()=>setMsg(''),3500); }
     }
-    async function handleLogin(username,password){
-      try{ const prof = await verifyLogin(username,password); setUser(prof); setStage('dash'); setUsersList(Object.keys(loadAllUsers())); }
-      catch(e){ setMessage(e.message); setTimeout(()=>setMessage(''),3500); }
+    async function onLogin(username,password){
+      try { const prof = await verifyLogin(username,password); setUser(prof); setStage('dashboard'); setUsersList(Object.keys(loadAllUsers())); }
+      catch(e){ setMsg(e.message); setTimeout(()=>setMsg(''),3500); }
     }
-    function handleLogout(){ setUser(null); setStage('auth'); }
-    function handleDelete(u){ if(!confirm('Borrar usuario '+u+'?')) return; deleteUser(u); setUsersList(Object.keys(loadAllUsers())); if(user && user.username===u){ handleLogout(); } }
+    function onLogout(){ setUser(null); setStage('landing'); }
+    function onDelete(u){ if(!confirm('Borrar usuario '+u+'?')) return; deleteUser(u); setUsersList(Object.keys(loadAllUsers())); if(user && user.username===u) onLogout(); }
 
     return (
-      <div className="w-full max-w-7xl mx-auto">
+      <div className="mx-auto w-full">
+        {/* HEADER */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 text-white flex items-center justify-center font-bold">G</div>
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-600 to-pink-500 flex items-center justify-center text-white text-lg font-bold">G</div>
             <div>
-              <h1 className="text-2xl font-bold text-white">GestAR</h1>
-              <p className="text-sm text-white/80">Aprendé Lengua de Señas Argentina — con cámara y progreso</p>
+              <div className="text-2xl font-bold text-white">GestAR</div>
+              <div className="text-sm text-white/80">Aprendé Lengua de Señas Argentina</div>
             </div>
           </div>
           <div>
-            {user ? (
-              <div className="bg-white/90 px-3 py-2 rounded flex items-center gap-3">
+            { user ? (
+              <div className="flex items-center gap-3 bg-white/90 p-2 rounded">
                 <div className="text-sm">Hola, <strong>{user.username}</strong></div>
-                <button className="px-3 py-1 rounded bg-red-500 text-white" onClick={handleLogout}>Cerrar sesión</button>
+                <button className="px-3 py-1 rounded bg-red-500 text-white" onClick={() => { onLogout(); }}>Cerrar sesión</button>
               </div>
-            ) : (<div className="text-sm text-white/80">No estás conectado</div>)}
+            ) : (
+              <div className="text-white/90">Conectate para guardar tu progreso</div>
+            )}
           </div>
         </div>
 
+        {/* LAYOUT */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1 glass p-5 card">
-            {stage === 'auth' && <AuthPanel onCreate={handleCreate} onLogin={handleLogin} users={usersList} onDelete={handleDelete} message={message} />}
-            {stage !== 'auth' && user && (
+          {/* LEFT: sidebar / auth */}
+          <div className="lg:col-span-1 card p-5">
+            { stage === 'landing' && (
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Bienvenido a GestAR</h2>
+                <p className="text-sm text-muted">Aprendé LSA usando la cámara. Crea una cuenta o entrá como invitado.</p>
+                <div className="mt-4 flex flex-col gap-2">
+                  <button className="px-3 py-2 rounded bg-indigo-600 text-white" onClick={()=>setStage('auth')}>Entrar / Crear cuenta</button>
+                  <button className="px-3 py-2 rounded border" onClick={()=>{ setUser({ username:'Invitado', data:{ xp:0, streak:0, badges:[], refs:{} } }); setStage('dashboard'); }}>Entrar como invitado</button>
+                </div>
+              </div>
+            )}
+
+            { stage === 'auth' && <AuthPanel onCreate={onCreate} onLogin={onLogin} users={usersList} onDelete={onDelete} message={msg} /> }
+
+            { stage !== 'auth' && stage !== 'landing' && user && (
               <div>
                 <div className="mb-4">
                   <div className="text-sm text-gray-600">XP</div>
                   <div className="text-2xl font-bold">{user.data.xp}</div>
                 </div>
                 <div className="mb-4">
-                  <div className="text-sm text-gray-600">Streak
+                  <div className="text-sm text-gray-600">Streak</div>
+                  <div className="text-2xl font-bold">🔥 {user.data.streak}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">Badges</div>
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {(user.data.badges || []).length ? (user.data.badges.map((b,i)=><div key={i} className="px-2 py-1 bg-yellow-100 rounded text-sm">{b}</div>)) : <div className="text-sm text-gray-500">—</div>}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: main content */}
+          <div className="lg:col-span-3 card p-6">
+            { stage === 'dashboard' && user && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold">Panel</h2>
+                  <div className="flex gap-2">
+                    <button className="px-3 py-2 border rounded" onClick={()=>{ setStage('lessons'); }}>Lecciones</button>
+                    <button className="px-3 py-2 border rounded" onClick={()=>{ setStage('practice'); }}>Práctica</button>
+                  </div>
+                </div>
+
+                <p className="text-sm text-muted mb-4">Seleccioná una categoría — las secciones son plegables por dificultad y contienen los items.</p>
+
+                <div className="space-y-3">
+                  {Object.keys(VOCAB).map((cat, idx) => (
+                    <AccordionBlock
+                      key={cat}
+                      title={cat}
+                      count={VOCAB[cat].length}
+                      onOpen={() => { localStorage.setItem('gestar_selected_cat', cat); setStage('lessons'); }}
+                    >
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {VOCAB[cat].map((w,i) => (
+                          <div key={w} className="p-2 bg-white/80 rounded flex justify-between items-center">
+                            <div className="text-sm font-medium">{w}</div>
+                            <div className="flex gap-1">
+                              <button className="px-2 py-1 text-xs border rounded" onClick={()=>{ localStorage.setItem('gestar_selected_cat', cat); localStorage.setItem('gestar_selected_word', w); setStage('lessons'); }}>Estudiar</button>
+                              <button className="px-2 py-1 text-xs bg-indigo-600 text-white rounded" onClick={()=>{ localStorage.setItem('gestar_selected_cat', cat); localStorage.setItem('gestar_selected_word', w); setStage('practice'); }}>Practicar</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionBlock>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            { stage === 'lessons' && user && (
+              <LessonsArea user={user} onSave={(d)=>{ setUser(prev=>({...prev, data:d})); saveUserData(user.username, d); }} onBack={()=>setStage('dashboard')} />
+            )}
+
+            { stage === 'practice' && user && (
+              <PracticeArea user={user} onSave={(d)=>{ setUser(prev=>({...prev, data:d})); saveUserData(user.username, d); }} onBack={()=>setStage('dashboard')} />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /******************************************************************
+   * AccordionBlock: plegable moderno
+   ******************************************************************/
+  function AccordionBlock({ title, count, children, onOpen }) {
+    const [open, setOpen] = useState(false);
+    return (
+      <div className="card p-3">
+        <div className="flex items-center justify-between cursor-pointer" onClick={() => { setOpen(!open); if(!open && onOpen) onOpen(); }}>
+          <div>
+            <div className="text-lg font-semibold">{title}</div>
+            <div className="text-sm text-muted">{count} items</div>
+          </div>
+          <div className="text-indigo-600 font-medium">{open ? '—' : '+'}</div>
+        </div>
+        {open && <div className="mt-3">{children}</div>}
+      </div>
+    );
+  }
+
+  /******************************************************************
+   * AuthPanel (registro / login) con validación
+   ******************************************************************/
+  function AuthPanel({ onCreate, onLogin, users, onDelete, message }) {
+    const [mode, setMode] = useState('login');
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirm, setConfirm] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    async function handleCreate() {
+      setLoading(true);
+      try {
+        if (password.length < 6) throw new Error('Contraseña mínima 6 caracteres');
+        if (password !== confirm) throw new Error('Confirmación no coincide');
+        await onCreate(username,password);
+      } catch(e){ alert(e.message); }
+      setLoading(false);
+    }
+    async function handleLogin(){ setLoading(true); try{ await onLogin(username,password); } catch(e){ alert(e.message); } setLoading(false); }
+
+    return (
+      <div>
+        <div className="flex gap-2 mb-4">
+          <button className={`px-3 py-2 rounded ${mode==='login'?'bg-indigo-600 text-white':'border'}`} onClick={()=>setMode('login')}>Entrar</button>
+          <button className={`px-3 py-2 rounded ${mode==='register'?'bg-indigo-600 text-white':'border'}`} onClick={()=>setMode('register')}>Registro</button>
+        </div>
+
+        <div>
+          <input className="w-full p-2 border rounded mb-2" placeholder="Usuario" value={username} onChange={e=>setUsername(e.target.value)} />
+          <input className="w-full p-2 border rounded mb-2" placeholder="Contraseña (mín 6)" value={password} type="password" onChange={e=>setPassword(e.target.value)} />
+          {mode==='register' && <input className="w-full p-2 border rounded mb-2" placeholder="Confirmar contraseña" value={confirm} type="password" onChange={e=>setConfirm(e.target.value)} />}
+          {mode==='login' ? (
+            <button className="w-full px-3 py-2 bg-green-600 text-white rounded" onClick={handleLogin} disabled={loading}>Entrar</button>
+          ) : (
+            <button className="w-full px-3 py-2 bg-blue-600 text-white rounded" onClick={handleCreate} disabled={loading}>Crear cuenta</button>
+          )}
+        </div>
+
+        <div className="mt-4">
+          <div className="text-sm mb-2">Usuarios guardados</div>
+          <ul className="space-y-2">
+            {users.length===0 && <li className="text-sm text-muted">Ninguno</li>}
+            {users.map(u => (
+              <li key={u} className="flex justify-between items-center p-2 bg-white rounded">
+                <div>{u}</div>
+                <div className="flex gap-2">
+                  <button className="px-2 py-1 border" onClick={() => { const pwd = prompt('Contraseña para ' + u); if (pwd) onLogin(u,pwd); }}>Entrar</button>
+                  <button className="px-2 py-1 border text-red-600" onClick={()=>onDelete(u)}>Borrar</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {message && <div className="mt-3 text-sm text-red-600">{message}</div>}
+      </div>
+    );
+  }
+
+  /******************************************************************
+   * LessonsArea: captura de referencia + test automático (Handpose fallback)
+   ******************************************************************/
+  function LessonsArea({ user, onSave, onBack }) {
+    const selectedCat = localStorage.getItem('gestar_selected_cat') || Object.keys(VOCAB)[0];
+    const [category, setCategory] = useState(selectedCat);
+    const [queue, setQueue] = useState(VOCAB[category].slice());
+    const [idx, setIdx] = useState(0);
+
+    const [handModel, setHandModel] = useState(null);
+    const videoRef = useRef(null);
+    const overlayRef = useRef(null);
+    const [cameraOn, setCameraOn] = useState(false);
+    const [running, setRunning] = useState(false);
+    const [frames, setFrames] = useState(0);
+    const [correct, setCorrect] = useState(0);
+    const [accuracy, setAccuracy] = useState(0);
+    const [smoothed, setSmoothed] = useState([]);
+
+    useEffect(()=>{ setQueue(VOCAB[category].slice()); setIdx(0); }, [category]);
+
+    useEffect(()=>{ let mounted=true; async function load() { try { const m = await handpose.load(); if(!mounted) return; setHandModel(m); } catch(e){ console.warn('handpose load failed',e);} } load(); return ()=>{ mounted=false }; }, []);
+
+    async function startCamera(){
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false });
+        videoRef.current.srcObject = s; await videoRef.current.play(); setCameraOn(true);
+      } catch(e){ alert('Error abriendo cámara: '+e.message); }
+    }
+    function stopCamera(){
+      const s = videoRef.current?.srcObject; if(s) s.getTracks().forEach(t=>t.stop()); if(videoRef.current) videoRef.current.srcObject = null; setCameraOn(false);
+      const ctx = overlayRef.current?.getContext('2d'); if(ctx) ctx.clearRect(0,0,overlayRef.current.width,overlayRef.current.height);
+      setRunning(false);
+    }
+
+    function captureCanvas(){
+      const v = videoRef.current; if(!v) return null;
+      const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; const ctx = c.getContext('2d'); ctx.drawImage(v,0,0);
+      return c;
+    }
+
+    function drawOverlay(preds){
+      const canvas = overlayRef.current; if(!canvas || !videoRef.current) return;
+      canvas.width = videoRef.current.videoWidth; canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(preds && preds.length>0){
+        preds.forEach(p => {
+          const tl = p.boundingBox.topLeft; const br = p.boundingBox.bottomRight;
+          const x = tl[0], y = tl[1], w = br[0]-tl[0], h = br[1]-tl[1];
+          ctx.strokeStyle = 'rgba(59,130,246,0.95)'; ctx.lineWidth = 3; ctx.strokeRect(x,y,w,h);
+        });
+      }
+    }
+
+    function computeEmbedding(pred){
+      if(!pred) return null;
+      return kpToVector(pred.landmarks || pred.landmarks3D || []);
+    }
+
+    async function captureReference(word){
+      if(!cameraOn) await startCamera();
+      const samples = [];
+      for(let i=0;i<REFERENCE_SAMPLES;i++){
+        await new Promise(r=>setTimeout(r,300));
+        const canvas = captureCanvas(); if(!canvas) continue;
+        if(handModel){
+          const preds = await handModel.estimateHands(canvas);
+          drawOverlay(preds);
+          if(preds && preds.length>0){
+            const emb = computeEmbedding(preds[0]); if(emb) samples.push(emb);
+          }
+        }
+      }
+      if(samples.length===0){ alert('No se detectaron manos. Mejorá la iluminación y la posición.'); return; }
+      // mean embedding
+      const mean = samples[0].slice();
+      for(let i=1;i<samples.length;i++) for(let j=0;j<mean.length;j++) mean[j]+=samples[i][j];
+      for(let j=0;j<mean.length;j++) mean[j]/=samples.length;
+      // save
+      const key = category+':'+word;
+      const data = {...user.data}; data.refs = data.refs || {}; data.refs[key] = { embedding: mean, created: new Date().toISOString() };
+      onSave(data); alert('Referencia guardada para: '+word);
+    }
+
+    async function runAutoTest(word){
+      if(!cameraOn) await startCamera();
+      setRunning(true); setFrames(0); setCorrect(0); setAccuracy(0); setSmoothed([]);
+      const endAt = Date.now() + TEST_DURATION_SECONDS*1000;
+      return new Promise((resolve)=>{
+        const interval = setInterval(async ()=>{
+          if(Date.now() >= endAt){ clearInterval(interval); setRunning(false); resolve({frames, correct, accuracy}); return; }
+          const canvas = captureCanvas(); if(!canvas) return;
+          let pred = null;
+          if(window.lsa64 && window.lsa64.predict){
+            try { pred = await window.lsa64.predict(canvas); }
+            catch(e){ console.warn('lsa64 error', e); }
+          } else if(handModel){
+            try {
+              const preds = await handModel.estimateHands(canvas);
+              drawOverlay(preds);
+              if(preds && preds.length>0){
+                const emb = computeEmbedding(preds[0]);
+                const refKey = category+':'+word;
+                const refs = (user.data.refs && user.data.refs[refKey]) || null;
+                if(emb && refs && refs.embedding){
+                  const sim = cosineSim(emb, refs.embedding);
+                  pred = { label: word, confidence: (sim+1)/2 };
+                } else {
+                  pred = { label: 'mano', confidence: 0.5 };
+                }
+              }
+            } catch(e){ console.warn(e); }
+          }
+
+          setFrames(f=>f+1);
+          if(pred && pred.label){
+            setSmoothed(prev => {
+              const next = [...prev, pred].slice(-SMOOTHING_WINDOW);
+              // weighted majority
+              const counts = {};
+              next.forEach(p => { const k = p.label.toLowerCase(); counts[k] = (counts[k]||0) + (p.confidence||0); });
+              const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+              const top = entries[0] ? entries[0][0] : null;
+              const topConf = entries[0] ? entries[0][1]/next.length : 0;
+              if(top && top.toLowerCase() === word.toLowerCase() && topConf >= CONFIDENCE_THRESHOLD){
+                setCorrect(c=>c+1);
+                const newAcc = (correct + 1)/(frames + 1);
+                setAccuracy(newAcc);
+              } else {
+                const newAcc = correct / (frames + 1);
+                setAccuracy(newAcc);
+              }
+              return next;
+            });
+          }
+        }, CAPTURE_INTERVAL_MS);
+      });
+    }
+
+    async function doTestAndAdvance(){
+      const word = queue[idx];
+      if(!word) { alert('No hay items'); return; }
+      setMsg('Ejecutando test para: '+word);
+      const res = await runAutoTest(word);
+      const passed = res.accuracy >= REQUIRED_ACCURACY;
+      const data = {...user.data};
+      if(passed){ const gain = Math.round(10 + res.accuracy*20); data.xp = (data.xp||0) + gain; data.streak = (data.streak||0)+1; if(data.streak % 7 === 0) data.badges = Array.from(new Set([...(data.badges||[]),'7-day streak'])); alert(`Resultado: ${(res.accuracy*100).toFixed(0)}% — APROBADO — +${gain} XP`); }
+      else { data.streak = 0; alert(`Resultado: ${(res.accuracy*100).toFixed(0)}% — NO APROBADO`); }
+      onSave(data);
+
+      // advance
+      setIdx(i => {
+        const next = i+1;
+        if(next >= queue.length) { alert('Lección terminada'); return i; }
+        return next;
+      });
+      setMsg('');
+    }
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Lecciones — {category}</h2>
+            <div className="text-sm text-muted">Capturá referencias para mejorar la evaluación automática.</div>
+          </div>
+          <div className="flex gap-2">
+            <select className="p-2 border rounded" value={category} onChange={(e)=>{ setCategory(e.target.value); setQueue(VOCAB[e.target.value].slice()); setIdx(0); }}>
+              {Object.keys(VOCAB).map(k=> <option key={k} value={k}>{k}</option>)}
+            </select>
+            <button className="px-3 py-2 border rounded" onClick={()=>{ stopCamera(); onBack(); }}>Volver</button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <div className="relative bg-black rounded overflow-hidden">
+              <video ref={videoRef} className="w-full h-64 object-cover" playsInline muted autoPlay />
+              <canvas ref={overlayRef} className="overlay" />
+            </div>
+
+            <div className="mt-3 flex gap-2">
+              <button className="px-3 py-2 bg-indigo-600 text-white rounded" onClick={()=> cameraOn ? stopCamera() : startCamera()}>{cameraOn ? 'Detener cámara' : 'Activar cámara'}</button>
+              <button className="px-3 py-2 border rounded" onClick={()=>captureReference(queue[idx])}>Capturar referencia</button>
+              <button className="px-3 py-2 bg-green-600 text-white rounded" onClick={()=>doTestAndAdvance()} disabled={running}>{running ? 'Test en curso...' : 'Iniciar test automático'}</button>
+            </div>
+
+            <div className="mt-3 p-3 bg-white rounded">
+              <div className="flex justify-between">
+                <div>
+                  <div className="text-sm text-gray-500">Prompt actual</div>
+                  <div className="text-xl font-bold">{queue[idx] || '—'}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm">Frames: <strong>{frames}</strong></div>
+                  <div className="text-sm">Correctos: <strong>{correct}</strong></div>
+                  <div className="text-sm">Precisión: <strong>{(accuracy*100).toFixed(0)}%</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="md:col-span-1">
+            <div className="p-3 bg-white rounded">
+              <h3 className="font-semibold mb-2">Cola</h3>
+              <ul className="space-y-1 max-h-72 overflow-auto">
+                {queue.map((it,i)=>(
+                  <li key={i} className={`p-2 rounded flex justify-between items-center ${i===idx?'border-l-4 border-indigo-500':''}`}>
+                    <div>{it}</div>
+                    <div><button className="px-2 py-1 border rounded text-xs" onClick={()=>setIdx(i)}>Ir</button></div>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 text-sm text-gray-600">
+                Consejos: iluminación, manos centradas, movimientos lentos. Capturar referencias mejora la exactitud.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /******************************************************************
+   * PracticeArea: práctica manual y rápida (sin test automático)
+   ******************************************************************/
+  function PracticeArea({ user, onSave, onBack }) {
+    const selectedCat = localStorage.getItem('gestar_selected_cat') || Object.keys(VOCAB)[0];
+    const selectedWord = localStorage.getItem('gestar_selected_word') || null;
+    const [category, setCategory] = useState(selectedCat);
+    const [queue, setQueue] = useState(VOCAB[category].slice());
+    const [i, setI] = useState(queue.indexOf(selectedWord) >= 0 ? queue.indexOf(selectedWord) : 0);
+
+    useEffect(()=>{ setQueue(VOCAB[category].slice()); setI(0); }, [category]);
+
+    function markCorrect(){
+      const data = {...user.data}; data.xp = (data.xp||0)+8; data.streak = (data.streak||0)+1;
+      if(data.streak % 7 === 0) data.badges = Array.from(new Set([...(data.badges||[]),'7-day streak']));
+      onSave(data);
+      const next = i+1; if(next < queue.length) setI(next); else alert('Lección terminada');
+    }
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Práctica</h2>
+          <div className="flex gap-2">
+            <select className="p-2 border rounded" value={category} onChange={e=>{ setCategory(e.target.value); localStorage.setItem('gestar_selected_cat', e.target.value); }}>
+              {Object.keys(VOCAB).map(k=> <option key={k} value={k}>{k}</option>)}
+            </select>
+            <button className="px-3 py-2 border rounded" onClick={onBack}>Volver</button>
+          </div>
+        </div>
+
+        <div className="p-4 bg-white rounded">
+          <div className="text-sm text-gray-500">Prompt</div>
+          <div className="text-4xl font-bold my-4">{queue[i]}</div>
+          <div className="flex gap-2">
+            <button className="px-3 py-2 bg-green-600 text-white rounded" onClick={markCorrect}>Marcar como correcto</button>
+            <button className="px-3 py-2 border rounded" onClick={()=>{ const nxt=i+1; if(nxt<queue.length) setI(nxt); else alert('Terminaste la lección'); }}>Siguiente</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /******************************************************************
+   * RENDER
+   ******************************************************************/
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+  </script>
+</body>
+</html>
