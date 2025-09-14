@@ -1,104 +1,112 @@
 {
-  "letras": [
-    { "id": "a", "palabra": "A", "categoria": "letras" },
-    { "id": "b", "palabra": "B", "categoria": "letras" },
-    { "id": "c", "palabra": "C", "categoria": "letras" },
-    { "id": "d", "palabra": "D", "categoria": "letras" },
-    { "id": "e", "palabra": "E", "categoria": "letras" },
-    { "id": "f", "palabra": "F", "categoria": "letras" },
-    { "id": "g", "palabra": "G", "categoria": "letras" },
-    { "id": "h", "palabra": "H", "categoria": "letras" },
-    { "id": "i", "palabra": "I", "categoria": "letras" },
-    { "id": "j", "palabra": "J", "categoria": "letras" },
-    { "id": "k", "palabra": "K", "categoria": "letras" },
-    { "id": "l", "palabra": "L", "categoria": "letras" },
-    { "id": "m", "palabra": "M", "categoria": "letras" },
-    { "id": "n", "palabra": "N", "categoria": "letras" },
-    { "id": "ñ", "palabra": "Ñ", "categoria": "letras" },
-    { "id": "o", "palabra": "O", "categoria": "letras" },
-    { "id": "p", "palabra": "P", "categoria": "letras" },
-    { "id": "q", "palabra": "Q", "categoria": "letras" },
-    { "id": "r", "palabra": "R", "categoria": "letras" },
-    { "id": "s", "palabra": "S", "categoria": "letras" },
-    { "id": "t", "palabra": "T", "categoria": "letras" },
-    { "id": "u", "palabra": "U", "categoria": "letras" },
-    { "id": "v", "palabra": "V", "categoria": "letras" },
-    { "id": "w", "palabra": "W", "categoria": "letras" },
-    { "id": "x", "palabra": "X", "categoria": "letras" },
-    { "id": "y", "palabra": "Y", "categoria": "letras" },
-    { "id": "z", "palabra": "Z", "categoria": "letras" }
-  ],
-  "familia": [
-    { "id": "padre", "palabra": "Padre", "categoria": "familia" },
-    { "id": "madre", "palabra": "Madre", "categoria": "familia" },
-    { "id": "hermano", "palabra": "Hermano", "categoria": "familia" },
-    { "id": "hermana", "palabra": "Hermana", "categoria": "familia" },
-    { "id": "hijo", "palabra": "Hijo", "categoria": "familia" },
-    { "id": "hija", "palabra": "Hija", "categoria": "familia" },
-    { "id": "esposo", "palabra": "Esposo", "categoria": "familia" },
-    { "id": "esposa", "palabra": "Esposa", "categoria": "familia" },
-    { "id": "bebe", "palabra": "Bebé", "categoria": "familia" },
-    { "id": "abuelo", "palabra": "Abuelo", "categoria": "familia" },
-    { "id": "abuela", "palabra": "Abuela", "categoria": "familia" }
-  ],
-  "comida": [
-    { "id": "agua", "palabra": "Agua", "categoria": "comida" },
-    { "id": "pan", "palabra": "Pan", "categoria": "comida" },
-    { "id": "manzana", "palabra": "Manzana", "categoria": "comida" },
-    { "id": "leche", "palabra": "Leche", "categoria": "comida" },
-    { "id": "cafe", "palabra": "Café", "categoria": "comida" },
-    { "id": "milanesa", "palabra": "Milanesa", "categoria": "comida" },
-    { "id": "pizza", "palabra": "Pizza", "categoria": "comida" },
-    { "id": "empanada", "palabra": "Empanada", "categoria": "comida" },
-    { "id": "mate", "palabra": "Mate", "categoria": "comida" },
-    { "id": "cerveza", "palabra": "Cerveza", "categoria": "comida" }
-  ],
-  "trabajos": [
-    { "id": "doctor", "palabra": "Doctor", "categoria": "trabajos" },
-    { "id": "maestro", "palabra": "Maestro", "categoria": "trabajos" },
-    { "id": "cocinero", "palabra": "Cocinero", "categoria": "trabajos" },
-    { "id": "chef", "palabra": "Chef", "categoria": "trabajos" },
-    { "id": "ingeniero", "palabra": "Ingeniero", "categoria": "trabajos" },
-    { "id": "abogado", "palabra": "Abogado", "categoria": "trabajos" },
-    { "id": "arquitecto", "palabra": "Arquitecto", "categoria": "trabajos" },
-    { "id": "enfermero", "palabra": "Enfermero", "categoria": "trabajos" },
-    { "id": "repartidor", "palabra": "Repartidor", "categoria": "trabajos" },
-    { "id": "estudiante", "palabra": "Estudiante", "categoria": "trabajos" }
-  ],
-  "animales": [
-    { "id": "perro", "palabra": "Perro", "categoria": "animales" },
-    { "id": "gato", "palabra": "Gato", "categoria": "animales" },
-    { "id": "pajaro", "palabra": "Pájaro", "categoria": "animales" },
-    { "id": "vaca", "palabra": "Vaca", "categoria": "animales" },
-    { "id": "caballo", "palabra": "Caballo", "categoria": "animales" },
-    { "id": "pez", "palabra": "Pez", "categoria": "animales" },
-    { "id": "conejo", "palabra": "Conejo", "categoria": "animales" },
-    { "id": "tigre", "palabra": "Tigre", "categoria": "animales" },
-    { "id": "leon", "palabra": "León", "categoria": "animales" },
-    { "id": "elefante", "palabra": "Elefante", "categoria": "animales" }
-  ],
-  "emociones": [
-    { "id": "feliz", "palabra": "Feliz", "categoria": "emociones" },
-    { "id": "triste", "palabra": "Triste", "categoria": "emociones" },
-    { "id": "enojo", "palabra": "Enojo", "categoria": "emociones" },
-    { "id": "sorpresa", "palabra": "Sorpresa", "categoria": "emociones" },
-    { "id": "miedo", "palabra": "Miedo", "categoria": "emociones" },
-    { "id": "orgullo", "palabra": "Orgullo", "categoria": "emociones" },
-    { "id": "verguenza", "palabra": "Vergüenza", "categoria": "emociones" },
-    { "id": "amor", "palabra": "Amor", "categoria": "emociones" },
-    { "id": "ansiedad", "palabra": "Ansiedad", "categoria": "emociones" },
-    { "id": "relajado", "palabra": "Relajado", "categoria": "emociones" }
-  ],
-  "frases": [
-    { "id": "hola", "palabra": "Hola", "categoria": "frases" },
-    { "id": "gracias", "palabra": "Gracias", "categoria": "frases" },
-    { "id": "porfavor", "palabra": "Por favor", "categoria": "frases" },
-    { "id": "losiento", "palabra": "Lo siento", "categoria": "frases" },
-    { "id": "adios", "palabra": "Adiós", "categoria": "frases" },
-    { "id": "buen-dia", "palabra": "Buen día", "categoria": "frases" },
-    { "id": "buenasnoches", "palabra": "Buenas noches", "categoria": "frases" },
-    { "id": "comestas", "palabra": "¿Cómo estás?", "categoria": "frases" },
-    { "id": "todovien", "palabra": "Todo bien", "categoria": "frases" },
-    { "id": "hastaluego", "palabra": "Hasta luego", "categoria": "frases" }
+  "levels": [
+    {
+      "name": "Abecedario",
+      "unlocked": true,
+      "lessons": [
+        {
+          "title": "Letras A-E",
+          "items": [
+            { "id": "A", "palabra": "A", "instruction": "Puño cerrado; el pulgar pegado al costado del puño." },
+            { "id": "B", "palabra": "B", "instruction": "Mano abierta, palma hacia afuera, dedos juntos." },
+            { "id": "C", "palabra": "C", "instruction": "Mano formando una C, con palma hacia un lado." },
+            { "id": "D", "palabra": "D", "instruction": "Dedo índice levantado, resto de los dedos apoyados." },
+            { "id": "E", "palabra": "E", "instruction": "Dedos curvados tocando la palma (similar a una E)." }
+          ]
+        },
+        {
+          "title": "Letras F-J",
+          "items": [
+            { "id": "F", "palabra": "F", "instruction": "Pulgar e índice formando un círculo; otros dedos extendidos." },
+            { "id": "G", "palabra": "G", "instruction": "Mano en forma de pinza, apuntando hacia un lado." },
+            { "id": "H", "palabra": "H", "instruction": "Dos dedos índices extendidos juntos, apuntando a la derecha." },
+            { "id": "I", "palabra": "I", "instruction": "Dedo meñique levantado, resto cerrado." },
+            { "id": "J", "palabra": "J", "instruction": "Dibujar una J en el aire con el meñique." }
+          ]
+        },
+        {
+          "title": "Letras K-O",
+          "items": [
+            { "id": "K", "palabra": "K", "instruction": "Dedo medio e índice extendidos formando V vertical; pulgar entre ellos." },
+            { "id": "L", "palabra": "L", "instruction": "Índice y pulgar formando una L." },
+            { "id": "M", "palabra": "M", "instruction": "Tres dedos sobre el pulgar (variante del abecedario manual)." },
+            { "id": "N", "palabra": "N", "instruction": "Dos dedos sobre el pulgar (variante del abecedario manual)." },
+            { "id": "Ñ", "palabra": "Ñ", "instruction": "Como N con un pequeño movimiento en forma de tilde." }
+          ]
+        },
+        {
+          "title": "Letras P-T",
+          "items": [
+            { "id": "O", "palabra": "O", "instruction": "Mano formando una O (dedos unidos)." },
+            { "id": "P", "palabra": "P", "instruction": "Similar a K pero apuntando hacia abajo." },
+            { "id": "Q", "palabra": "Q", "instruction": "Similar a G pero apuntando hacia abajo." },
+            { "id": "R", "palabra": "R", "instruction": "Dedo índice y medio cruzados." },
+            { "id": "S", "palabra": "S", "instruction": "Puño con pulgar encima." }
+          ]
+        },
+        {
+          "title": "Letras U-Z",
+          "items": [
+            { "id": "T", "palabra": "T", "instruction": "Pulgar entre índice y medio (como T del abecedario manual)." },
+            { "id": "U", "palabra": "U", "instruction": "Índice y medio juntos, apuntando hacia arriba." },
+            { "id": "V", "palabra": "V", "instruction": "Índice y medio separados formando V." },
+            { "id": "W", "palabra": "W", "instruction": "Tres dedos levantados formando W." },
+            { "id": "X", "palabra": "X", "instruction": "Índice doblado formando garra." },
+            { "id": "Y", "palabra": "Y", "instruction": "Pulgar y meñique extendidos (seña Y)." },
+            { "id": "Z", "palabra": "Z", "instruction": "Dibujar una Z en el aire con el índice." }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Familia",
+      "unlocked": false,
+      "lessons": [
+        {
+          "title": "Padres y hermanos",
+          "items": [
+            { "id": "madre", "palabra": "madre", "instruction": "Mano abierta; pulgar tocando la barbilla." },
+            { "id": "padre", "palabra": "padre", "instruction": "Mano abierta; pulgar tocando la frente." },
+            { "id": "hermano", "palabra": "hermano", "instruction": "Dedo índice y movimiento lateral entre dos puntos (variante)." },
+            { "id": "hermana", "palabra": "hermana", "instruction": "Variante regional; similar a hermano con contexto femenino." }
+          ]
+        },
+        {
+          "title": "Abuelos y pareja",
+          "items": [
+            { "id": "abuelo", "palabra": "abuelo", "instruction": "Mano desde la cabeza hacia adelante (más lejos que padre)." },
+            { "id": "abuela", "palabra": "abuela", "instruction": "Igual que abuelo con matiz femenino." },
+            { "id": "esposo", "palabra": "esposo", "instruction": "Simulación de anillo en dedo anular." },
+            { "id": "esposa", "palabra": "esposa", "instruction": "Igual que esposo, contexto femenino." }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Comidas y Bebidas",
+      "unlocked": false,
+      "lessons": [
+        {
+          "title": "Básicos",
+          "items": [
+            { "id": "pan", "palabra": "pan", "instruction": "Golpecitos con mano sobre la otra (simulando pan)." },
+            { "id": "manzana", "palabra": "manzana", "instruction": "Simular sostener y pelar una manzana." },
+            { "id": "agua", "palabra": "agua", "instruction": "Movimiento acercando un vaso a la boca." },
+            { "id": "cafe", "palabra": "café", "instruction": "Simular sostener taza y sorber." },
+            { "id": "leche", "palabra": "leche", "instruction": "Simular exprimir o acercar un vaso." }
+          ]
+        },
+        {
+          "title": "Populares",
+          "items": [
+            { "id": "milanesa", "palabra": "milanesa", "instruction": "Gesto descriptivo de un trozo de comida frito (variante local)." },
+            { "id": "pizza", "palabra": "pizza", "instruction": "Simular cortar una porción triangular." },
+            { "id": "empanada", "palabra": "empanada", "instruction": "Simular doblar con la mano como empanada." },
+            { "id": "mate", "palabra": "mate", "instruction": "Sostener una taza/calandria y simular beber." },
+            { "id": "cerveza", "palabra": "cerveza", "instruction": "Simular levantar vaso y brindar." }
+          ]
+        }
+      ]
+    }
   ]
 }
