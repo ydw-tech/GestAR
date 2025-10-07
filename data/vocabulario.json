@@ -1,0 +1,121 @@
+{
+  "levels": [
+    {
+      "name": "Abecedario",
+      "unlocked": true,
+      "lessons": [
+        {
+          "title": "Abecedario completo",
+          "items": [
+            {"palabra":"A","file":"assets/abecedario/A.png"},
+            {"palabra":"B","file":"assets/abecedario/B.png"},
+            {"palabra":"C","file":"assets/abecedario/C.png"},
+            {"palabra":"CH","file":"assets/abecedario/CH.png"},
+            {"palabra":"D","file":"assets/abecedario/D.png"},
+            {"palabra":"E","file":"assets/abecedario/E.png"},
+            {"palabra":"F","file":"assets/abecedario/F.png"},
+            {"palabra":"G","file":"assets/abecedario/G.png"},
+            {"palabra":"H","file":"assets/abecedario/H.png"},
+            {"palabra":"I","file":"assets/abecedario/I.png"},
+            {"palabra":"J","file":"assets/abecedario/J.png"},
+            {"palabra":"K","file":"assets/abecedario/K.png"},
+            {"palabra":"L","file":"assets/abecedario/L.png"},
+            {"palabra":"M","file":"assets/abecedario/M.png"},
+            {"palabra":"N","file":"assets/abecedario/N.png"},
+            {"palabra":"Ñ","file":"assets/abecedario/Ñ.png"},
+            {"palabra":"O","file":"assets/abecedario/O.png"},
+            {"palabra":"P","file":"assets/abecedario/P.png"},
+            {"palabra":"Q","file":"assets/abecedario/Q.png"},
+            {"palabra":"R","file":"assets/abecedario/R.png"},
+            {"palabra":"S","file":"assets/abecedario/S.png"},
+            {"palabra":"T","file":"assets/abecedario/T.png"},
+            {"palabra":"U","file":"assets/abecedario/U.png"},
+            {"palabra":"V","file":"assets/abecedario/V.png"},
+            {"palabra":"W","file":"assets/abecedario/W.png"},
+            {"palabra":"X","file":"assets/abecedario/X.png"},
+            {"palabra":"Y","file":"assets/abecedario/Y.png"},
+            {"palabra":"Z","file":"assets/abecedario/Z.png"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Familia",
+      "lessons": [
+        {
+          "title": "Mi familia",
+          "items": [
+            {"palabra":"Madre","file":"assets/familia/Madre.png"},
+            {"palabra":"Padre","file":"assets/familia/Padre.png"},
+            {"palabra":"Hermano","file":"assets/familia/Hermano.png"},
+            {"palabra":"Hermana","file":"assets/familia/Hermana.png"},
+            {"palabra":"Abuela","file":"assets/familia/Abuela.png"},
+            {"palabra":"Abuelo","file":"assets/familia/Abuelo.png"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Comidas y bebidas",
+      "lessons": [
+        {
+          "title": "Alimentos",
+          "items": [
+            {"palabra":"Pan","file":"assets/comidas_bebidas/Pan.png"},
+            {"palabra":"Agua","file":"assets/comidas_bebidas/Agua.png"},
+            {"palabra":"Leche","file":"assets/comidas_bebidas/Leche.png"},
+            {"palabra":"Manzana","file":"assets/comidas_bebidas/Manzana.png"},
+            {"palabra":"Arroz","file":"assets/comidas_bebidas/Arroz.png"},
+            {"palabra":"Jugo","file":"assets/comidas_bebidas/Jugo.png"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Profesiones",
+      "lessons": [
+        {
+          "title": "Trabajo",
+          "items": [
+            {"palabra":"Doctor","file":"assets/profesiones/Doctor.png"},
+            {"palabra":"Profesor","file":"assets/profesiones/Profesor.png"},
+            {"palabra":"Ingeniero","file":"assets/profesiones/Ingeniero.png"},
+            {"palabra":"Estudiante","file":"assets/profesiones/Estudiante.png"},
+            {"palabra":"Bombero","file":"assets/profesiones/Bombero.png"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Objetos cotidianos",
+      "lessons": [
+        {
+          "title": "Casa y trabajo",
+          "items": [
+            {"palabra":"Libro","file":"assets/objetos/Libro.png"},
+            {"palabra":"Silla","file":"assets/objetos/Silla.png"},
+            {"palabra":"Mesa","file":"assets/objetos/Mesa.png"},
+            {"palabra":"Computadora","file":"assets/objetos/Computadora.png"},
+            {"palabra":"Teléfono","file":"assets/objetos/Telefono.png"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Animales",
+      "lessons": [
+        {
+          "title": "Fauna",
+          "items": [
+            {"palabra":"Perro","file":"assets/animales/Perro.png"},
+            {"palabra":"Gato","file":"assets/animales/Gato.png"},
+            {"palabra":"Pájaro","file":"assets/animales/Pajaro.png"},
+            {"palabra":"Caballo","file":"assets/animales/Caballo.png"},
+            {"palabra":"Vaca","file":"assets/animales/Vaca.png"}
+          ]
+        }
+      ]
+    }
+  ]
+}
+
