@@ -1,0 +1,127 @@
+// loadAssets.js
+
+// Sonidos generales
+const sounds = {
+  correct: 'https://drive.google.com/uc?export=download&id=1R7d0efTbDmmhH55wdSWFg4b8TdcZMPSh',
+  incorrect: 'https://drive.google.com/uc?export=download&id=1JB2M23-EL2AaP2dq46vsKlViTUFsW68l'
+};
+
+// Imagen de referencia general
+const alfabetomanual = 'https://drive.google.com/uc?export=download&id=1BhvRyJR_YhT1fsUgLuzK7Naurwh-1W7Z';
+
+// Niveles y lecciones con todas las señas (placeholders)
+const levels = [
+  {
+    name: "Abecedario",
+    unlocked: true,
+    lessons: [
+      {
+        title: "Letras A-E",
+        items: [
+          { id: "A", palabra: "A", image: "https://via.placeholder.com/150?text=A" },
+          { id: "B", palabra: "B", image: "https://via.placeholder.com/150?text=B" },
+          { id: "C", palabra: "C", image: "https://via.placeholder.com/150?text=C" },
+          { id: "D", palabra: "D", image: "https://via.placeholder.com/150?text=D" },
+          { id: "E", palabra: "E", image: "https://via.placeholder.com/150?text=E" }
+        ]
+      },
+      {
+        title: "Letras F-J",
+        items: [
+          { id: "F", palabra: "F", image: "https://via.placeholder.com/150?text=F" },
+          { id: "G", palabra: "G", image: "https://via.placeholder.com/150?text=G" },
+          { id: "H", palabra: "H", image: "https://via.placeholder.com/150?text=H" },
+          { id: "I", palabra: "I", image: "https://via.placeholder.com/150?text=I" },
+          { id: "J", palabra: "J", image: "https://via.placeholder.com/150?text=J" }
+        ]
+      },
+      {
+        title: "Letras K-O",
+        items: [
+          { id: "K", palabra: "K", image: "https://via.placeholder.com/150?text=K" },
+          { id: "L", palabra: "L", image: "https://via.placeholder.com/150?text=L" },
+          { id: "M", palabra: "M", image: "https://via.placeholder.com/150?text=M" },
+          { id: "N", palabra: "N", image: "https://via.placeholder.com/150?text=N" },
+          { id: "Ñ", palabra: "Ñ", image: "https://via.placeholder.com/150?text=Ñ" }
+        ]
+      },
+      {
+        title: "Letras P-T",
+        items: [
+          { id: "O", palabra: "O", image: "https://via.placeholder.com/150?text=O" },
+          { id: "P", palabra: "P", image: "https://via.placeholder.com/150?text=P" },
+          { id: "Q", palabra: "Q", image: "https://via.placeholder.com/150?text=Q" },
+          { id: "R", palabra: "R", image: "https://via.placeholder.com/150?text=R" },
+          { id: "S", palabra: "S", image: "https://via.placeholder.com/150?text=S" },
+          { id: "T", palabra: "T", image: "https://via.placeholder.com/150?text=T" }
+        ]
+      },
+      {
+        title: "Letras U-Z y CH",
+        items: [
+          { id: "U", palabra: "U", image: "https://via.placeholder.com/150?text=U" },
+          { id: "V", palabra: "V", image: "https://via.placeholder.com/150?text=V" },
+          { id: "W", palabra: "W", image: "https://via.placeholder.com/150?text=W" },
+          { id: "X", palabra: "X", image: "https://via.placeholder.com/150?text=X" },
+          { id: "Y", palabra: "Y", image: "https://via.placeholder.com/150?text=Y" },
+          { id: "Z", palabra: "Z", image: "https://via.placeholder.com/150?text=Z" },
+          { id: "CH", palabra: "CH", image: "https://via.placeholder.com/150?text=CH" }
+        ]
+      }
+    ]
+  },
+  {
+    name: "Familia",
+    unlocked: false,
+    lessons: [
+      {
+        title: "Padres y hermanos",
+        items: [
+          { id: "madre", palabra: "madre", image: "https://via.placeholder.com/150?text=madre" },
+          { id: "padre", palabra: "padre", image: "https://via.placeholder.com/150?text=padre" },
+          { id: "hermano", palabra: "hermano", image: "https://via.placeholder.com/150?text=hermano" },
+          { id: "hermana", palabra: "hermana", image: "https://via.placeholder.com/150?text=hermana" }
+        ]
+      },
+      {
+        title: "Abuelos y pareja",
+        items: [
+          { id: "abuelo", palabra: "abuelo", image: "https://via.placeholder.com/150?text=abuelo" },
+          { id: "abuela", palabra: "abuela", image: "https://via.placeholder.com/150?text=abuela" },
+          { id: "esposo", palabra: "esposo", image: "https://via.placeholder.com/150?text=esposo" },
+          { id: "esposa", palabra: "esposa", image: "https://via.placeholder.com/150?text=esposa" }
+        ]
+      }
+    ]
+  },
+  {
+    name: "Comidas y Bebidas",
+    unlocked: false,
+    lessons: [
+      {
+        title: "Básicos",
+        items: [
+          { id: "pan", palabra: "pan", image: "https://via.placeholder.com/150?text=pan" },
+          { id: "manzana", palabra: "manzana", image: "https://via.placeholder.com/150?text=manzana" },
+          { id: "agua", palabra: "agua", image: "https://via.placeholder.com/150?text=agua" },
+          { id: "cafe", palabra: "cafe", image: "https://via.placeholder.com/150?text=cafe" },
+          { id: "leche", palabra: "leche", image: "https://via.placeholder.com/150?text=leche" }
+        ]
+      },
+      {
+        title: "Populares",
+        items: [
+          { id: "milanesa", palabra: "milanesa", image: "https://via.placeholder.com/150?text=milanesa" },
+          { id: "pizza", palabra: "pizza", image: "https://via.placeholder.com/150?text=pizza" },
+          { id: "empanada", palabra: "empanada", image: "https://via.placeholder.com/150?text=empanada" },
+          { id: "mate", palabra: "mate", image: "https://via.placeholder.com/150?text=mate" },
+          { id: "cerveza", palabra: "cerveza", image: "https://via.placeholder.com/150?text=cerveza" }
+        ]
+      }
+    ]
+  }
+];
+
+// Exportar sonidos, niveles y Alfabetomanual
+export { sounds, levels, alfabetomanual };
+
