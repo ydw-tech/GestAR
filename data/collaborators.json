@@ -1,0 +1,9 @@
+[
+  { "nombre": "Ana", "years": 5, "description": "Sorda desde nacimiento; colabora con ejemplos de vocabulario cotidiano.", "photo": "https://via.placeholder.com/300x300.png?text=Ana" },
+  { "nombre": "Lucas", "years": 3, "description": "Colaborador en videos de verbos y frases útiles.", "photo": "https://via.placeholder.com/300x300.png?text=Lucas" },
+  { "nombre": "Mónica", "years": 10, "description": "Coordinadora de los cursos de LSA en el laboratorio de idiomas de la UBA.", "photo": "https://via.placeholder.com/300x300.png?text=Mónica" },
+  { "nombre": "Julián", "years": 7, "description": "Colabora con ejemplos de acciones y expresiones.", "photo": "https://via.placeholder.com/300x300.png?text=Julián" },
+  { "nombre": "Sofía", "years": 6, "description": "Creadora de material pedagógico visual y ejemplos prácticos.", "photo": "https://via.placeholder.com/300x300.png?text=Sof%C3%ADa" },
+  { "nombre": "Mariano", "years": 4, "description": "Intérprete y colaborador en la grabación de muestras.", "photo": "https://via.placeholder.com/300x300.png?text=Mariano" }
+]
+
