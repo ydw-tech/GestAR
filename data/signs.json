@@ -7,7 +7,8 @@
     "context": "informal",
     "videos": [
       { "url": "https://www.youtube.com/watch?v=PLACEHOLDER1", "profesor": "Ana" },
-      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER2", "profesor": "Juan" }
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER2", "profesor": "Juan" },
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER3", "profesor": "Mario" }
     ]
   },
   {
@@ -17,7 +18,9 @@
     "meaning": "Grupo de personas unidas por parentesco",
     "context": "formal",
     "videos": [
-      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER3", "profesor": "Lucía" }
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER4", "profesor": "Lucía" },
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER5", "profesor": "Mónica" },
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER6", "profesor": "Martín" }
     ]
   },
   {
@@ -27,7 +30,9 @@
     "meaning": "Alimentos que se consumen",
     "context": "informal",
     "videos": [
-      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER4", "profesor": "Pedro" }
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER7", "profesor": "Pedro" },
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER8", "profesor": "Juan" },
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER9", "profesor": "Ana" },
     ]
   }
 ]
