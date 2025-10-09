@@ -2,11 +2,14 @@ window.onload = function() {
   const landing = document.getElementById('landing');
   const enterBtn = document.getElementById('enterBtn');
   const glossarySection = document.getElementById('glossarySection');
-  const teachersSection = document.getElementById('teachersSection');
   const glossary = document.getElementById('glossary');
   const searchInput = document.getElementById('searchInput');
   const categoryFilter = document.getElementById('categoryFilter');
+
+  const toggleTeachersBtn = document.getElementById('toggleTeachersBtn');
+  const teachersSection = document.getElementById('teachersSection');
   const teachersDiv = document.getElementById('teachers');
+
   const funFactText = document.getElementById('funFactText');
 
   // Datos de ejemplo
@@ -15,35 +18,37 @@ window.onload = function() {
       palabra: "Hola",
       categoria: "Saludos",
       context: "Informal",
-      meaning: "Saludo general",
       videos: [
         { profesor: "Ana", url: "https://www.youtube.com/watch?v=VIDEOID1" },
-        { profesor: "Lucas", url: "https://www.youtube.com/watch?v=VIDEOID2" }
+        { profesor: "Lucas", url: "https://www.youtube.com/watch?v=VIDEOID2" },
+        { profesor: "Mónica", url: "https://www.youtube.com/watch?v=VIDEOID3" }
       ]
     },
     {
       palabra: "Familia",
       categoria: "Sustantivos",
       context: "Formal",
-      meaning: "Grupo familiar",
       videos: [
-        { profesor: "Mónica", url: "https://www.youtube.com/watch?v=VIDEOID3" }
+        { profesor: "Ana", url: "https://www.youtube.com/watch?v=VIDEOID4" },
+        { profesor: "Julián", url: "https://www.youtube.com/watch?v=VIDEOID5" },
+        { profesor: "Lucas", url: "https://www.youtube.com/watch?v=VIDEOID6" }
       ]
     },
     {
       palabra: "Comer",
       categoria: "Verbos",
       context: "Informal",
-      meaning: "Acción de alimentarse",
       videos: [
-        { profesor: "Julián", url: "https://www.youtube.com/watch?v=VIDEOID4" }
+        { profesor: "Mónica", url: "https://www.youtube.com/watch?v=VIDEOID7" },
+        { profesor: "Julián", url: "https://www.youtube.com/watch?v=VIDEOID8" },
+        { profesor: "Ana", url: "https://www.youtube.com/watch?v=VIDEOID9" }
       ]
     }
   ];
 
   const teachers = [
     { nombre: "Ana", anosEnsenando: 5, descripcion: "Profesora sorda especializada en LSA.", foto: "https://via.placeholder.com/150" },
-    { nombre: "Lucas", anosEnsenando: 3, descripcion: "Profesora sorda, enseña cursos intermedios.", foto: "https://via.placeholder.com/150" },
+    { nombre: "Lucas", anosEnsenando: 3, descripcion: "Profesor sordo, enseña cursos intermedios.", foto: "https://via.placeholder.com/150" },
     { nombre: "Mónica", anosEnsenando: 10, descripcion: "Profesora sorda, experta en alfabetización LSA.", foto: "https://via.placeholder.com/150" },
     { nombre: "Julián", anosEnsenando: 7, descripcion: "Profesor sordo, cursos avanzados de LSA.", foto: "https://via.placeholder.com/150" }
   ];
@@ -58,13 +63,25 @@ window.onload = function() {
   enterBtn.addEventListener('click', () => {
     landing.style.display = 'none';
     glossarySection.style.display = 'block';
-    teachersSection.style.display = 'block';
+    toggleTeachersBtn.style.display = 'block';
     displaySigns(signs);
-    displayTeachers();
     displayFunFact();
     populateCategoryFilter();
   });
 
+  // Mostrar/Ocultar profesores
+  toggleTeachersBtn.addEventListener('click', () => {
+    if (teachersSection.style.display === 'none') {
+      teachersSection.style.display = 'block';
+      displayTeachers();
+      toggleTeachersBtn.textContent = "Ocultar Profesores";
+    } else {
+      teachersSection.style.display = 'none';
+      toggleTeachersBtn.textContent = "Ver Profesores";
+    }
+  });
+
+  // Glosario
   function populateCategoryFilter() {
     const categories = [...new Set(signs.map(s => s.categoria))];
     categories.forEach(cat => {
@@ -112,7 +129,7 @@ window.onload = function() {
 
       const label = document.createElement('p');
       label.className = 'label';
-      label.textContent = `Profesor: ${sign.videos[0].profesor} | Contexto: ${sign.context} | Significado: ${sign.meaning}`;
+      label.textContent = `Profesor: ${sign.videos[0].profesor} | Contexto: ${sign.context}`;
       card.appendChild(label);
 
       glossary.appendChild(card);
@@ -131,6 +148,7 @@ window.onload = function() {
     displaySigns(filtered);
   }
 
+  // Profesores
   function displayTeachers() {
     teachersDiv.innerHTML = '';
     teachers.forEach(t => {
@@ -158,9 +176,9 @@ window.onload = function() {
     });
   }
 
+  // Dato curioso
   function displayFunFact() {
     const day = new Date().getDate();
     funFactText.textContent = funFacts[day % funFacts.length];
   }
-
 };
