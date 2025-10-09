@@ -1,31 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manos que Hablan</title>
+  <link rel="stylesheet" href="style.css">
+</head>
 <body>
-  <!-- Landing Page -->
-  <section id="landing" style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;background:#4a90e2;color:white;">
-    <h1>Manos que Hablan</h1>
-    <p>Glosario de LSA - Proyecto Estudiantil</p>
-    <button id="enterBtn" style="padding:1rem 2rem;font-size:1.2rem;border:none;border-radius:8px;cursor:pointer;">Entrar al Glosario</button>
-  </section>
 
-  <!-- Glosario -->
-  <section id="glossarySection" style="display:none;">
-    <h2>Glosario</h2>
-    <div id="glossary"></div>
-  </section>
+<!-- Landing Page -->
+<section id="landing" class="landing">
+  <h1>Manos que Hablan</h1>
+  <p>Glosario de LSA - Proyecto Estudiantil</p>
+  <button id="enterBtn">Entrar al Glosario</button>
+</section>
 
-  <!-- Profesores -->
-  <section id="teachersSection" style="display:none;">
-    <h2>Profesores</h2>
-    <div id="teachers"></div>
-  </section>
+<!-- Glosario -->
+<section id="glossarySection" class="glossary-section" style="display:none;">
+  <header>
+    <h2>Glosario de LSA</h2>
+    <div class="search-filter">
+      <input type="text" id="searchInput" placeholder="Buscar palabra...">
+      <select id="categoryFilter">
+        <option value="all">Todas las categorías</option>
+      </select>
+    </div>
+  </header>
+  <div id="glossary" class="glossary"></div>
+</section>
 
-  <!-- Fun Fact -->
-  <section id="funFact">
-    <h2>Dato curioso del día</h2>
-    <p id="funFactText"></p>
-  </section>
+<!-- Profesores -->
+<section id="teachersSection" class="teachers-section" style="display:none;">
+  <h2>Profesores</h2>
+  <div id="teachers" class="teachers"></div>
+</section>
 
-  <footer>Demo v0.1 - Proyecto Estudiantil</footer>
+<!-- Dato curioso -->
+<section id="funFact" class="funfact">
+  <h2>Dato curioso del día</h2>
+  <p id="funFactText"></p>
+</section>
 
-  <!-- JS al final -->
-  <script src="script.js"></script>
+<footer>
+  Demo v0.1 - Proyecto Estudiantil
+</footer>
+
+<script src="script.js"></script>
 </body>
+</html>
