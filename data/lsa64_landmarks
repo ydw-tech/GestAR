@@ -1,0 +1,59 @@
+import cv2
+import mediapipe as mp
+import os
+import json
+import numpy as np
+from tqdm import tqdm
+
+VIDEO_DIR = r"C:\Users\User\Downloads\lsa64_raw\all"
+OUTPUT_JSON = r"C:\Users\User\Downloads\lsa64_app\data\lsa64_landmarks.json"
+
+mp_hands = mp.solutions.hands
+mp_pose = mp.solutions.pose
+
+hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2)
+pose = mp_pose.Pose(static_image_mode=False)
+
+lsa64_data = {}
+
+video_files = [f for f in os.listdir(VIDEO_DIR) if f.endswith(".mp4")]
+
+# Organizar por seña (los 3 primeros dígitos)
+señas = {}
+for f in video_files:
+    seña_id = f[:3]
+    if seña_id not in señas:
+        señas[seña_id] = []
+    señas[seña_id].append(f)
+
+for seña_id, archivos in señas.items():
+    all_pose = []
+    all_hands = []
+
+    for video_file in tqdm(archivos, desc=f"Procesando {seña_id}"):
+        cap = cv2.VideoCapture(os.path.join(VIDEO_DIR, video_file))
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pose_results = pose.process(frame_rgb)
+            hands_results = hands.process(frame_rgb)
+
+            if pose_results.pose_landmarks:
+                all_pose.append(np.array([[lm.x,lm.y,lm.z] for lm in pose_results.pose_landmarks.landmark]))
+            if hands_results.multi_hand_landmarks:
+                for hand_lms in hands_results.multi_hand_landmarks:
+                    all_hands.append(np.array([[lm.x,lm.y,lm.z] for lm in hand_lms.landmark]))
+        cap.release()
+
+    mean_pose = np.mean(all_pose, axis=0).tolist() if all_pose else []
+    mean_hands = np.mean(all_hands, axis=0).tolist() if all_hands else []
+
+    lsa64_data[seña_id] = {"pose": mean_pose, "hands": mean_hands}
+
+os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
+with open(OUTPUT_JSON, "w") as f:
+    json.dump(lsa64_data, f)
+
+print("Landmarks promedio guardados en:", OUTPUT_JSON)
