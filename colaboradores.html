@@ -1,38 +1,32 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Colaboradores — Gestos que Hablan</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/styles.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Colaboradores - Gestos que hablan</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
 </head>
-<body class="bg-gray-50 text-gray-800">
-  <nav class="bg-white shadow-md p-4 flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-purple-700">Gestos que Hablan</h1>
-    <a href="glosario.html" class="text-gray-700 hover:text-purple-700">Volver al Glosario</a>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">Gestos que hablan</a>
+    <a href="glosario.html" class="nav-link">Volver al glosario</a>
   </nav>
 
-  <section class="max-w-5xl mx-auto mt-10 px-4">
-    <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">Colaboradores</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-      <div class="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition">
-        <h3 class="text-xl font-semibold text-purple-700">Sofía A.</h3>
-        <p class="text-gray-600 mt-2">Sorda desde nacimiento. Enseña LSA desde hace 10 años.</p>
+  <main class="content">
+    <h2>Colaboradores</h2>
+    <div class="grid">
+      <div class="card">
+        <img src="assets/img/colaboradores/sofia.jpg" alt="Sofía A." />
+        <h3>Sofía A.</h3>
+        <p>Profesora sorda de LSA desde 2012. Se especializa en enseñanza para oyentes adultos.</p>
       </div>
-      <div class="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition">
-        <h3 class="text-xl font-semibold text-purple-700">Mariano P.</h3>
-        <p class="text-gray-600 mt-2">Intérprete y docente en educación inclusiva. 6 años enseñando LSA.</p>
-      </div>
-      <div class="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition">
-        <h3 class="text-xl font-semibold text-purple-700">Lucía F.</h3>
-        <p class="text-gray-600 mt-2">Docente y divulgadora sobre cultura sorda. 12 años de experiencia.</p>
+
+      <div class="card">
+        <img src="assets/img/colaboradores/mariano.jpg" alt="Mariano P." />
+        <h3>Mariano P.</h3>
+        <p>Docente sordo y formador de intérpretes. Participa en talleres comunitarios de inclusión.</p>
       </div>
     </div>
-  </section>
-
-  <footer class="text-center py-6 mt-12 text-gray-500 text-sm">
-    © 2025 Gestos que Hablan — Proyecto estudiantil sobre LSA
-  </footer>
+  </main>
 </body>
 </html>
