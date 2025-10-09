@@ -1,0 +1,46 @@
+[
+  {
+    "palabra": "Hola",
+    "categoria": "Saludos",
+    "context": "Informal",
+    "meaning": "Saludo general",
+    "videos": [
+      { "profesor": "Ana", "url": "https://www.youtube.com/watch?v=ScMzIvxBSi4" },
+      { "profesor": "Lucas", "url": "https://www.youtube.com/watch?v=tgbNymZ7vqY" },
+      { "profesor": "Mónica", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
+    ]
+  },
+  {
+    "palabra": "Gracias",
+    "categoria": "Expresiones",
+    "context": "Formal/Informal",
+    "meaning": "Expresión de gratitud",
+    "videos": [
+      { "profesor": "Mariano", "url": "https://www.youtube.com/watch?v=ScMzIvxBSi4" },
+      { "profesor": "Sofía", "url": "https://www.youtube.com/watch?v=tgbNymZ7vqY" },
+      { "profesor": "Julián", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
+    ]
+  },
+  {
+    "palabra": "Familia",
+    "categoria": "Sustantivos",
+    "context": "Formal",
+    "meaning": "Grupo de personas relacionadas",
+    "videos": [
+      { "profesor": "Lucía", "url": "https://www.youtube.com/watch?v=ScMzIvxBSi4" },
+      { "profesor": "Pedro", "url": "https://www.youtube.com/watch?v=tgbNymZ7vqY" },
+      { "profesor": "Ana", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
+    ]
+  },
+  {
+    "palabra": "Comer",
+    "categoria": "Verbos",
+    "context": "Informal",
+    "meaning": "Acción de alimentarse",
+    "videos": [
+      { "profesor": "Mónica", "url": "https://www.youtube.com/watch?v=ScMzIvxBSi4" },
+      { "profesor": "Julián", "url": "https://www.youtube.com/watch?v=tgbNymZ7vqY" },
+      { "profesor": "Lucas", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
+    ]
+  }
+]
