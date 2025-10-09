@@ -1,18 +1,30 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Gestos que hablan</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
-  <script src="assets/js/main.js" defer></script>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/styles.css">
 </head>
-<body class="landing">
-  <header>
-    <img src="assets/img/logo.png" alt="Logo Gestos que hablan" class="logo" />
-    <h1>Gestos que hablan</h1>
-    <p>Un glosario interactivo creado como proyecto estudiantil para acercar la Lengua de Señas Argentina a todos.</p>
-    <button onclick="entrarAlGlosario()" class="btn">Entrar al glosario</button>
-  </header>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+
+  <main class="max-w-3xl text-center p-8">
+    <img src="https://placehold.co/100x100?text=Logo" alt="Logo" class="mx-auto mb-6 rounded-full shadow" />
+    <h1 class="text-4xl sm:text-5xl font-extrabold text-indigo-700 mb-4">Gestos que hablan</h1>
+    <p class="text-lg text-gray-700 mb-8">
+      Glosario interactivo de Lengua de Señas Argentina — proyecto estudiantil. Explora señas, mira ejemplos reales y conoce a los colaboradores.
+    </p>
+
+    <div class="space-x-3">
+      <a href="glosario.html" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow hover:bg-indigo-500 transition">Entrar al Glosario</a>
+      <a href="colaboradores.html" class="inline-block bg-white text-indigo-600 px-5 py-3 rounded-xl border border-indigo-200 hover:shadow transition">Ver colaboradores</a>
+    </div>
+
+    <p class="text-sm text-gray-500 mt-8">Demo — proyectos estudiantiles. Videos: placeholders (YouTube)</p>
+  </main>
+
 </body>
 </html>
