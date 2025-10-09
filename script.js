@@ -1,4 +1,17 @@
-// Elements
+document.addEventListener('DOMContentLoaded', () => {
+  const landing = document.getElementById('landing');
+  const enterBtn = document.getElementById('enterBtn');
+  const glossarySection = document.getElementById('glossarySection');
+  const teachersSection = document.getElementById('teachersSection');
+
+  // Botón para entrar al glosario
+  enterBtn.addEventListener('click', () => {
+    landing.classList.add('hidden');
+    glossarySection.classList.remove('hidden');
+    teachersSection.classList.remove('hidden');
+  });
+
+  // Elements
 const landing = document.getElementById('landing');
 const enterBtn = document.getElementById('enterBtn');
 const glossarySection = document.getElementById('glossarySection');
@@ -50,3 +63,5 @@ function displaySigns(list){
         const btn = document.createElement('button'); btn.textContent=v.profesor; btn.className='tab-btn';
         if(idx===0) btn.classList.add('active');
         btn.onclick = ()=>{ iframe.src=v.url.replace("watch?v=","embed
+
+});
