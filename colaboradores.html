@@ -1,32 +1,32 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Colaboradores - Gestos que hablan</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Colaboradores — Gestos que hablan</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/styles.css">
 </head>
-<body>
-  <nav class="navbar">
-    <a href="index.html" class="nav-logo">Gestos que hablan</a>
-    <a href="glosario.html" class="nav-link">Volver al glosario</a>
+<body class="bg-gray-50 text-gray-800">
+  <nav class="bg-white shadow sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="text-lg font-bold text-indigo-600">Gestos que hablan</a>
+      <a href="glosario.html" class="text-sm text-gray-700 hover:text-indigo-600">Volver al glosario</a>
+    </div>
   </nav>
 
-  <main class="content">
-    <h2>Colaboradores</h2>
-    <div class="grid">
-      <div class="card">
-        <img src="assets/img/colaboradores/sofia.jpg" alt="Sofía A." />
-        <h3>Sofía A.</h3>
-        <p>Profesora sorda de LSA desde 2012. Se especializa en enseñanza para oyentes adultos.</p>
-      </div>
-
-      <div class="card">
-        <img src="assets/img/colaboradores/mariano.jpg" alt="Mariano P." />
-        <h3>Mariano P.</h3>
-        <p>Docente sordo y formador de intérpretes. Participa en talleres comunitarios de inclusión.</p>
-      </div>
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Colaboradores</h2>
+    <div id="collaboratorsRow" class="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
+      <!-- JS injecta tarjetas -->
     </div>
   </main>
+
+  <footer class="text-center py-8 text-sm text-gray-500">
+    Demo v0.1 — © 2025 Gestos que hablan
+  </footer>
+
+  <script src="assets/js/main.js"></script>
 </body>
 </html>
