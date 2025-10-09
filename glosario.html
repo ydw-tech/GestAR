@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Glosario — Gestos que Hablan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script defer src="js/datos.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+  <!-- NAV -->
+  <nav class="bg-white shadow-md p-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-purple-700">Gestos que Hablan</h1>
+    <div class="space-x-4">
+      <a href="glosario.html" class="text-gray-700 hover:text-purple-700">Glosario</a>
+      <a href="colaboradores.html" class="text-gray-700 hover:text-purple-700">Colaboradores</a>
+    </div>
+  </nav>
+
+  <!-- DATO DEL DÍA -->
+  <section class="bg-gradient-to-r from-purple-100 to-pink-100 text-center py-6 mt-4">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Dato del Día ✨</h2>
+    <p id="dato-dia" class="text-gray-700 text-lg max-w-xl mx-auto"></p>
+  </section>
+
+  <!-- GLOSARIO -->
+  <section class="max-w-6xl mx-auto mt-12 px-4">
+    <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Glosario de SeñAS</h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Ejemplo 1 -->
+      <div class="bg-white shadow-lg rounded-2xl overflow-hidden hover:scale-105 transition-transform">
+        <video class="w-full h-56 object-cover" autoplay muted loop>
+          <source src="https://placehold.co/400x250?text=Video+Hola" type="video/mp4">
+        </video>
+        <div class="p-4">
+          <h3 class="text-xl font-semibold text-gray-900">Hola</h3>
+          <p class="text-gray-600 mt-1">Saludo común. Versión informal y formal disponibles.</p>
+          <p class="text-sm text-gray-500 mt-2">Colaborador: <span class="font-medium">Sofía A.</span></p>
+        </div>
+      </div>
+
+      <!-- Ejemplo 2 -->
+      <div class="bg-white shadow-lg rounded-2xl overflow-hidden hover:scale-105 transition-transform">
+        <video class="w-full h-56 object-cover" autoplay muted loop>
+          <source src="https://placehold.co/400x250?text=Video+Gracias" type="video/mp4">
+        </video>
+        <div class="p-4">
+          <h3 class="text-xl font-semibold text-gray-900">Gracias</h3>
+          <p class="text-gray-600 mt-1">Forma de expresar gratitud. Puede ser usada en cualquier contexto.</p>
+          <p class="text-sm text-gray-500 mt-2">Colaborador: <span class="font-medium">Mariano P.</span></p>
+        </div>
+      </div>
+
+      <!-- Ejemplo 3 -->
+      <div class="bg-white shadow-lg rounded-2xl overflow-hidden hover:scale-105 transition-transform">
+        <video class="w-full h-56 object-cover" autoplay muted loop>
+          <source src="https://placehold.co/400x250?text=Video+Por+favor" type="video/mp4">
+        </video>
+        <div class="p-4">
+          <h3 class="text-xl font-semibold text-gray-900">Por favor</h3>
+          <p class="text-gray-600 mt-1">Expresión de cortesía para acompañar pedidos o agradecimientos.</p>
+          <p class="text-sm text-gray-500 mt-2">Colaborador: <span class="font-medium">Lucía F.</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="text-center py-6 mt-12 text-gray-500 text-sm">
+    © 2025 Gestos que Hablan — Proyecto estudiantil sobre LSA
+  </footer>
+</body>
+</html>
