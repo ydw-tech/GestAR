@@ -132,8 +132,8 @@ header h2 {
   text-align: center;
 }
 
-/* ===== Profesores ===== */
-.toggle-teachers-btn {
+/* ===== Colaboradores ===== */
+.toggle-collaborators-btn {
   display: block;
   margin: 1rem auto;
   padding: 0.8rem 1.5rem;
@@ -145,31 +145,53 @@ header h2 {
   cursor: pointer;
   transition: 0.3s;
 }
-.toggle-teachers-btn:hover { background-color: #357ABD; }
+.toggle-collaborators-btn:hover { background-color: #357ABD; }
 
-.teachers {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
+.collaborators-section {
   padding: 1rem;
 }
 
-.teacher-card {
+.collaborators {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+
+.collaborator-card {
+  min-width: 200px;
   background: white;
   border-radius: 12px;
   padding: 1rem;
-  width: 150px;
   text-align: center;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.teacher-card img {
+.collaborator-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.collaborator-card img {
   width: 100px;
   height: 100px;
   border-radius: 50%;
   margin-bottom: 0.5rem;
 }
+
+.collaborator-card h3 {
+  margin: 0.5rem 0 0.3rem 0;
+  font-size: 1.2rem;
+  color: #4a90e2;
+}
+
+.collaborator-card p {
+  font-size: 0.9rem;
+  color: #555;
+}
+
 
 /* ===== Dato curioso ===== */
 .funfact {
