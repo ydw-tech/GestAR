@@ -49,7 +49,23 @@ function landmarksToVector(landmarks){
 function cosineSim(a,b){ if(!a||!b||a.length!==b.length) return 0; let dot=0; for(let i=0;i<a.length;i++) dot+=a[i]*b[i]; return dot; }
 
 /******************* APP PRINCIPAL *******************/
-function App(){ /* TODO: copiar todo tu código React de index.html aquí */ }
+function App(){ <!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GestAR — Lecciones de LSA</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script defer src="js/app.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Comidas y Bebidas — Nivel Inicial</h1>
+  </header>
+  <main id="lesson-container" class="grid"></main>
+</body>
+</html>
+ }
 
 /******************* RENDER *******************/
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
