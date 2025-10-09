@@ -1,53 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestos que Hablan</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestos que Hablan — Glosario LSA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body>
+<body class="bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 min-h-screen flex flex-col items-center justify-center">
 
-<!-- Landing Page -->
-<section id="landing" class="landing">
-  <h1>Gestos que Hablan</h1>
-  <p>Glosario de LSA - Proyecto Estudiantil</p>
-  <button id="enterBtn">Entrar al Glosario</button>
-</section>
+  <div class="text-center p-6">
+    <h1 class="text-5xl font-extrabold text-gray-800 mb-4">Gestos que Hablan</h1>
+    <p class="text-gray-700 text-lg max-w-md mx-auto mb-8">
+      Un glosario digital de Lengua de Señas Argentina, creado como proyecto estudiantil para acercar la LSA a más personas.
+    </p>
+    <a href="glosario.html" class="bg-purple-600 text-white px-6 py-3 rounded-xl text-lg font-semibold hover:bg-purple-700 transition">
+      Entrar al Glosario
+    </a>
+  </div>
 
-<!-- Glosario -->
-<section id="glossarySection" class="glossary-section" style="display:none;">
-  <header>
-    <h2>Glosario de LSA</h2>
-    <div class="search-filter">
-      <input type="text" id="searchInput" placeholder="Buscar palabra...">
-      <select id="categoryFilter">
-        <option value="all">Todas las categorías</option>
-      </select>
-    </div>
-  </header>
-  <div id="glossary" class="glossary"></div>
-</section>
-
-<!-- Botón para mostrar colaboradores -->
-<button id="toggleCollaboratorsBtn" class="toggle-collaborators-btn" style="display:none;">Ver Colaboradores</button>
-
-<!-- Colaboradores -->
-<section id="collaboratorsSection" class="collaborators-section" style="display:none;">
-  <h2>Colaboradores</h2>
-  <div id="collaborators" class="collaborators"></div>
-</section>
-
-<!-- Dato curioso -->
-<section id="funFact" class="funfact">
-  <h2>Dato curioso del día</h2>
-  <p id="funFactText"></p>
-</section>
-
-<footer>
-  Demo v0.1 - Proyecto Estudiantil
-</footer>
-
-<script src="script.js"></script>
 </body>
 </html>
