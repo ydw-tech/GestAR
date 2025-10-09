@@ -1,0 +1,33 @@
+[
+  {
+    "palabra": "Hola",
+    "categoria": "Saludos",
+    "difficulty": "básico",
+    "meaning": "Saludo informal",
+    "context": "informal",
+    "videos": [
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER1", "profesor": "Ana" },
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER2", "profesor": "Juan" }
+    ]
+  },
+  {
+    "palabra": "Familia",
+    "categoria": "Familia",
+    "difficulty": "básico",
+    "meaning": "Grupo de personas unidas por parentesco",
+    "context": "formal",
+    "videos": [
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER3", "profesor": "Lucía" }
+    ]
+  },
+  {
+    "palabra": "Comida",
+    "categoria": "Comida",
+    "difficulty": "básico",
+    "meaning": "Alimentos que se consumen",
+    "context": "informal",
+    "videos": [
+      { "url": "https://www.youtube.com/watch?v=PLACEHOLDER4", "profesor": "Pedro" }
+    ]
+  }
+]
