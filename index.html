@@ -3,37 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GestAR Demo</title>
+  <title>Manos que Hablan</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- Landing Page -->
+<section id="landing" class="landing">
+  <h1>Manos que Hablan</h1>
+  <p>Glosario de LSA - Proyecto Estudiantil</p>
+  <button id="enterBtn">Entrar al Glosario</button>
+</section>
+
+<!-- Glosario -->
+<section id="glossarySection" class="hidden">
   <header>
-    <h1>GestAR Demo</h1>
+    <h2>Glosario de LSA</h2>
+    <div class="search-filter">
+      <input type="text" id="searchInput" placeholder="Buscar palabra...">
+      <select id="categoryFilter">
+        <option value="all">Todas las categorías</option>
+      </select>
+    </div>
   </header>
+  <div id="glossary" class="glossary"></div>
+</section>
 
-  <!-- Búsqueda y filtro -->
-  <section class="search-section">
-    <input type="text" id="searchInput" placeholder="Buscar palabra...">
-    <select id="categoryFilter">
-      <option value="all">Todas las categorías</option>
-    </select>
-  </section>
+<!-- Profesores -->
+<section id="teachersSection" class="hidden">
+  <h2>Profesores</h2>
+  <div id="teachers" class="teachers"></div>
+</section>
 
-  <!-- Glosario -->
-  <section id="glossary" class="glossary">
-    <!-- Tarjetas generadas por JS -->
-  </section>
+<!-- Dato curioso -->
+<section id="funFact" class="funfact">
+  <h2>Dato curioso del día</h2>
+  <p id="funFactText"></p>
+</section>
 
-  <!-- Datos curiosos -->
-  <section id="funFact" class="funfact">
-    <h2>Dato curioso del día</h2>
-    <p id="funFactText"></p>
-  </section>
+<footer>
+  Demo v0.1 - Proyecto Estudiantil
+</footer>
 
-  <footer>
-    Demo v0.1
-  </footer>
-
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
