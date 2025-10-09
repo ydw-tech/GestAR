@@ -1,0 +1,14 @@
+[
+  {
+    "Nombre": "Ana",
+    "Años enseñando": 5,
+    "Descripción": "Profesora sorda de LSA, apasionada por la enseñanza visual.",
+    "Foto": "https://via.placeholder.com/150"
+  },
+  {
+    "Nombre": "Juan",
+    "Años enseñando": 7,
+    "Descripción": "Experto en LSA y comunicación inclusiva.",
+    "Foto": "https://via.placeholder.com/150"
+  }
+]
